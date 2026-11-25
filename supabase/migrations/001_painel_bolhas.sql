@@ -54,7 +54,12 @@ create index if not exists atendimentos_status_criado on public.atendimentos(sta
 create index if not exists atendimentos_conclusao on public.atendimentos(concluido_em);
 create index if not exists atendimentos_expiracao on public.atendimentos(criado_em) where status='concluido';
 
--- Acesso à Data API só para autenticados; RLS restringe aos administradores autorizados.\ngrant usage on schema public to authenticated;\ngrant select on public.app_admins to authenticated;\ngrant select, insert, update on public.servicos, public.profissionais, public.atendimentos to authenticated;\n\nalter table public.app_admins enable row level security;
+-- Acesso à Data API só para autenticados; RLS restringe aos administradores autorizados.
+grant usage on schema public to authenticated;
+grant select on public.app_admins to authenticated;
+grant select, insert, update on public.servicos, public.profissionais, public.atendimentos to authenticated;
+
+alter table public.app_admins enable row level security;
 alter table public.servicos enable row level security;
 alter table public.profissionais enable row level security;
 alter table public.atendimentos enable row level security;
