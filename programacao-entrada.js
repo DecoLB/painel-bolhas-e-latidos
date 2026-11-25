@@ -1,4 +1,4 @@
-import {supabase,state,notify,esc,today,refresh} from './app.js?v=200';
+import {supabase,state,notify,esc,today,refresh} from './app.js?v=210';
 
 const byId=id=>document.getElementById(id);
 const plusDays=(iso,n)=>{const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
@@ -9,6 +9,8 @@ const speciesLabel=r=>r.especie==='gato'?'Gato':r.especie==='cachorro'?'Cachorro
 const breedLabel=r=>r.raca||'Não informada';
 const transportLabel=r=>r.transporte_bolhas===true?'Sim · Bolhas & Latidos':r.transporte_bolhas===false?'Não · Tutor':'Não informado';
 const serviceName=id=>state.services.find(s=>s.id===id)?.nome||'Serviço cadastrado';
+const additionalNames=ids=>(ids||[]).map(id=>state.additionalCatalog.find(x=>x.id===id)?.nome||'Adicional indisponível').join(', ')||'Nenhum';
+const manejoOptions='<option value="">Selecione o manejo</option><option value="nao_se_aplica">Não se aplica</option><option value="ansioso">Pet Ansioso</option><option value="agressivo">Pet Agressivo</option><option value="idoso">Pet Idoso</option>';
 let bookings=[],busy=false,refreshing=false;
 
 function permitted(){return state.role==='admin'||state.role==='operacional'}
@@ -31,7 +33,7 @@ async function loadBookings(){
   refreshing=true;
   const day=datePicker();
   try{
-    const {data,error}=await supabase.rpc('listar_programacao_entrada_v2',{p_data:day});
+    const {data,error}=await supabase.rpc('listar_programacao_entrada_v3',{p_data:day});
     if(error)throw error;
     if(byId('programacaoEntradaData').value!==day)return;
     bookings=data||[];
@@ -62,7 +64,9 @@ function render(day=datePicker()){
     badge='<span class="tag farol-tag status-'+tone+'"><span class="farol-dot" aria-hidden="true"></span>'+statusText+'</span>';
     let footer='';
     if(r.status==='programado' && current){
-      footer='<div class="preentrada-actions">'+
+      footer='<div class="preentrada-actions">'
+        +'<label class="preentrada-manejo-label">Manejo especial (somente informativo)'
+        +'<select data-checkin-manejo="'+esc(r.programacao_id)+'" required>'+manejoOptions+'</select></label>'+
         '<button type="button" class="btn btn-primary" data-checkin="'+esc(r.programacao_id)+'">✓ Dar entrada</button>'+
         '<button type="button" class="btn btn-danger" data-open-reject="'+esc(r.programacao_id)+'">Recusar atendimento</button>'+
         '</div><div class="reject-form" data-reject-form="'+esc(r.programacao_id)+'" hidden>'+
@@ -94,6 +98,8 @@ function render(day=datePicker()){
       '<div class="preentrada-detail"><b>Porte:</b> '+esc(porteLabels[r.porte]||r.porte)+' · <b>Serviço:</b> '+esc(serviceName(r.servico_id))+'</div>'+
       '<div class="preentrada-detail"><b>Espécie:</b> '+esc(speciesLabel(r))+' · <b>Raça:</b> '+esc(breedLabel(r))+'</div>'+
       '<div class="preentrada-detail"><b>Transporte:</b> '+esc(transportLabel(r))+'</div>'+
+      '<div class="preentrada-detail"><b>Pelagem:</b> '+esc(r.pelagem||'Não informada')+'</div>'+
+      '<div class="preentrada-detail"><b>Adicionais:</b> '+esc(additionalNames(r.adicionais))+'</div>'+
       '<div class="preentrada-detail"><b>Data:</b> '+esc(pretty(day))+'</div>'+
       '<div class="preentrada-detail"><b>Endereço:</b> '+esc(addressOf(r))+'</div>'+footer+'</article>';
   }).join('');
@@ -102,10 +108,12 @@ async function checkin(id){
   if(busy || datePicker()!==today())return notify('A entrada somente pode ser registrada na data agendada.','error');
   const r=bookings.find(x=>x.programacao_id===id);
   if(!r || r.status!=='programado')return;
+  const manejo=byId('programacaoEntradaList').querySelector('[data-checkin-manejo="'+id+'"]')?.value;
+  if(!manejo){notify('Selecione o manejo especial (ou Não se aplica) para registrar a entrada.','error');return;}
   if(!confirm('Confirmar a chegada de '+r.pet_nome+' e enviar para a fila de espera?'))return;
   busy=true;
   try{
-    const {error}=await supabase.rpc('registrar_entrada_programada',{p_programacao_id:id});
+    const {error}=await supabase.rpc('registrar_entrada_programada_v3',{p_programacao_id:id,p_manejo:manejo});
     if(error)throw error;
     notify('Entrada confirmada: '+r.pet_nome+' já está na fila de espera.','success');
     await refresh();

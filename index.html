@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="./visual-v3.css?v=180">
   <link rel="stylesheet" href="./farol-v19.css?v=190">
   <link rel="stylesheet" href="./especie-v20.css?v=200">
+  <link rel="stylesheet" href="./comercial-v21.css?v=210">
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -39,7 +40,7 @@
       <p id="setupInfo" class="setup-info" hidden>O banco ainda não foi conectado. Configure o projeto Supabase em config.js para habilitar o acesso.</p>
       
     </form>
-    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 2.0.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 2.1.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
   </section>
   <div id="appShell" class="shell" hidden>
     <header class="topbar">
@@ -67,7 +68,7 @@
         </div>
         <div class="subnav">
           <button type="button" class="subnav-item active" data-admin-tab="gerencial">Visão gerencial</button>
-          <button type="button" class="subnav-item" data-admin-tab="servicos">Serviços</button>
+          <button type="button" class="subnav-item" data-admin-tab="servicos">Serviços e preços</button>
           <button type="button" class="subnav-item" data-admin-tab="profissionais">Profissionais</button>
           <button type="button" class="subnav-item" data-admin-tab="agendamentos">Calendário <span id="bookingTabCount" class="booking-tab-count" hidden>0</span></button>
         </div>
@@ -115,13 +116,49 @@
             <section class="panel"><div class="panel-heading"><h2>Raças mais atendidas</h2><p>Quantidade concluída por raça no dia selecionado</p></div><div id="breedsChart" class="bars"></div></section>
             <section class="panel"><div class="panel-heading"><h2>Atendimentos por espécie</h2><p>Quantidade concluída por espécie no dia selecionado</p></div><div id="speciesChart" class="bars"></div></section>
           </div>
-          <section class="panel"><div class="panel-heading"><h2>Relatório diário</h2><p>Atendimentos do dia, incluindo pendentes, com duração e responsável.</p></div><div class="table-scroll"><table><thead><tr><th>Animal</th><th>Espécie</th><th>Raça</th><th>Transporte</th><th>Serviço</th><th>Profissional</th><th>Entrada</th><th>Início</th><th>Fim</th><th>Espera</th><th>Execução</th><th>Status</th></tr></thead><tbody id="reportTable"></tbody></table></div></section>
+          <section class="panel"><div class="panel-heading"><h2>Relatório diário</h2><p>Atendimentos do dia, incluindo pendentes, com duração e responsável.</p></div><div class="table-scroll"><table><thead><tr><th>Animal</th><th>Espécie</th><th>Raça</th><th>Transporte</th><th>Serviço</th><th>Adicionais</th><th>Manejo</th><th>Profissional</th><th>Entrada</th><th>Início</th><th>Fim</th><th>Espera</th><th>Execução</th><th>Status</th></tr></thead><tbody id="reportTable"></tbody></table></div></section>
         </div>
         <div id="admin-servicos" class="admin-panel" hidden>
           <section class="panel">
             <div class="panel-heading"><h2>Catálogo de serviços</h2><p>Somente os serviços ativos serão oferecidos no painel de entrada.</p></div>
-            <form id="serviceForm" class="inline-form"><label class="sr-only" for="serviceName">Novo serviço</label><input id="serviceName" maxlength="100" required placeholder="Nome do serviço"><button class="btn btn-primary">Cadastrar serviço</button></form>
+            <form id="serviceForm" class="commercial-create-form">
+              <div class="field"><label for="serviceName">Novo serviço</label><input id="serviceName" maxlength="100" required placeholder="Nome do serviço"></div>
+              <p class="commercial-note">Valor inicial opcional para cães de porte P. Preços de outros portes e gatos podem ser configurados abaixo.</p>
+              <div class="commercial-price-row">
+                <label>Pelagem curta (R$)<input type="number" id="newPriceCurto" step="0.01" min="0" placeholder="Não definido"></label>
+                <label>Pelagem média (R$)<input type="number" id="newPriceMedio" step="0.01" min="0" placeholder="Não definido"></label>
+                <label>Pelagem longa (R$)<input type="number" id="newPriceLongo" step="0.01" min="0" placeholder="Não definido"></label>
+              </div>
+              <button class="btn btn-primary">Cadastrar serviço e valores</button>
+            </form>
             <div id="servicesList" class="entity-list"></div>
+            <div class="commercial-divider"></div>
+            <h3>Manutenção da tabela de preços</h3>
+            <p class="commercial-note">Os valores abaixo são exclusivos do Administrador e são usados na estimativa pública. Campos vazios significam “sob consulta”.</p>
+            <form id="servicePriceForm" class="commercial-price-form">
+              <div class="commercial-selectors">
+                <label>Serviço<select id="commercialService" required></select></label>
+                <label>Espécie<select id="commercialSpecies"><option value="cachorro">Cachorro</option><option value="gato">Gato</option></select></label>
+                <label>Porte<select id="commercialPorte"><option value="pequeno">Pequeno</option><option value="medio">Médio</option><option value="grande">Grande</option></select></label>
+              </div>
+              <div class="commercial-price-row">
+                <label>Curto (R$)<input type="number" id="commercialCurto" min="0" step="0.01" placeholder="Sob consulta"></label>
+                <label>Médio (R$)<input type="number" id="commercialMedio" min="0" step="0.01" placeholder="Sob consulta"></label>
+                <label>Longo (R$)<input type="number" id="commercialLongo" min="0" step="0.01" placeholder="Sob consulta"></label>
+              </div>
+              <button class="btn btn-primary" type="submit">Salvar preços</button>
+            </form>
+          </section>
+
+          <section class="panel commercial-addons-panel">
+            <div class="panel-heading"><h2>Serviços adicionais e valores</h2><p>Edite os itens opcionais oferecidos no agendamento. Valores unitários não aparecem para prestadores.</p></div>
+            <form id="additionalForm" class="commercial-additional-form">
+              <label>Serviço adicional<input id="additionalName" maxlength="120" required placeholder="Nome do adicional"></label>
+              <label>Tipo de preço<select id="additionalMode"><option value="fixo">Valor fixo</option><option value="a_partir">A partir de</option><option value="sob_consulta">Sob consulta</option></select></label>
+              <label>Valor de referência (R$)<input id="additionalPrice" type="number" min="0" step="0.01" placeholder="Sem valor"></label>
+              <button class="btn btn-primary" type="submit">Cadastrar adicional</button>
+            </form>
+            <div id="additionalAdminList" class="commercial-additional-list"></div>
           </section>
         </div>
         <div id="admin-profissionais" class="admin-panel" hidden>
@@ -184,6 +221,9 @@
               <div class="field"><label for="entrySpecies">Espécie <b>*</b></label><select id="entrySpecies" required><option value="">Selecione</option><option value="cachorro">Cachorro</option><option value="gato">Gato</option></select></div>
               <div class="field"><label for="entryBreed">Raça <b>*</b></label><select id="entryBreed" required disabled><option value="">Selecione a espécie primeiro</option></select><small class="breed-help" id="entryBreedHelp">Para gatos, será registrado Gato/Felino.</small></div>
             </div>
+            <div class="field"><label for="entryPelagem">Tipo de pelagem <span>(opcional)</span></label><select id="entryPelagem"><option value="">Não informado</option><option value="curto">Curto</option><option value="medio">Médio</option><option value="longo">Longo</option></select></div>
+            <div class="field"><label for="entryManejo">Manejo especial <b>*</b></label><select id="entryManejo" required><option value="">Selecione o manejo</option><option value="nao_se_aplica">Não se aplica</option><option value="ansioso">Pet Ansioso</option><option value="agressivo">Pet Agressivo</option><option value="idoso">Pet Idoso</option></select><small>Informação para a equipe, sem valores.</small></div>
+            <fieldset class="commercial-extras"><legend>Serviços adicionais <span>(opcional, sem valores)</span></legend><div id="entryAdditionalList" class="extras-checks"></div></fieldset>
             <div class="field"><label for="entryService">Serviço a realizar <b>*</b></label><select id="entryService" required><option value="">Selecione um serviço</option></select></div>
             <div class="field"><label for="isScheduled">Serviço agendado? <b>*</b></label><select id="isScheduled" required><option value="">Selecione</option><option value="sim">Sim</option><option value="nao">Não</option></select></div>
             <div id="scheduledTimeField" class="field" hidden><label for="scheduledTime">Horário agendado <b>*</b></label><input id="scheduledTime" type="time"></div>
@@ -205,15 +245,16 @@
         <div class="page-heading no-print"><div><span class="eyebrow">PAINEL OPERACIONAL</span><h1>Visão do telão</h1><p>Exibição contínua das filas de atendimento.</p></div><button id="fullscreenBtn" type="button" class="btn btn-outline">Tela cheia</button></div>
         <div class="tv-header"><div class="brand"><img class="brand-logo" src="./assets/logo.webp" alt="Logo Bolhas & Latidos" onerror="this.hidden=true"><span class="brand-fallback">Bolhas <em>&</em> Latidos</span></div><div class="tv-now" id="tvClock"></div></div>
         <div class="tv-grid" id="tvGrid" data-density="single"><div class="tv-column farol-warning"><h2>Aguardando <span id="tvWaitingCount">0</span></h2><div id="tvWaiting" class="tv-list"></div></div><div class="tv-column farol-success"><h2>Em execução <span id="tvActiveCount">0</span></h2><div id="tvActive" class="tv-list"></div></div></div>
-        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 2.0.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 2.1.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
       </section>
     </main>
-    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 2.0.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
+    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 2.1.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
   </div>
   <section id="bookingPrintSheet" hidden aria-label="Ficha de programação para impressão"></section>
   <script src="./config.js?v=20261125-2"></script>
-  <script type="module" src="./app.js?v=200"></script>
-  <script type="module" src="./agendamento-admin.js?v=200"></script>
-  <script type="module" src="./programacao-entrada.js?v=200"></script>
+  <script type="module" src="./app.js?v=210"></script>
+  <script type="module" src="./comercial-admin.js?v=210"></script>
+  <script type="module" src="./agendamento-admin.js?v=210"></script>
+  <script type="module" src="./programacao-entrada.js?v=210"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-import {supabase,state,notify,esc,today} from './app.js?v=200';
+import {supabase,state,notify,esc,today} from './app.js?v=210';
 
 let solicitacoes=[], programados=new Map(), selectedDate=null, loading=false, channel=null;
 const byId=id=>document.getElementById(id);
@@ -7,6 +7,7 @@ const pretty=iso=>new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'short',y
 const longDate=iso=>new Intl.DateTimeFormat('pt-BR',{dateStyle:'full',timeZone:'UTC'}).format(new Date(iso+'T12:00:00Z'));
 const weekday=iso=>new Intl.DateTimeFormat('pt-BR',{weekday:'short',timeZone:'UTC'}).format(new Date(iso+'T12:00:00Z')).replace('.','');
 const serviceName=id=>state.services.find(s=>s.id===id)?.nome||'Serviço cadastrado';
+const extrasNames=ids=>(ids||[]).map(id=>state.additionalCatalog.find(x=>x.id===id)?.nome||'Adicional indisponível').join(', ')||'Nenhum';
 const allowed=()=>state.role==='admin';
 const ranges=()=>({start:plusDays(today(),1),end:plusDays(today(),30),current:today()});
 const isVisible=()=>!byId('admin-agendamentos').hidden && !byId('page-admin').hidden;
@@ -105,7 +106,8 @@ function card(r,pending){
     +'<div class="booking-card-meta"><b>Data:</b> '+esc(pretty(r.data_desejada))+' · <b>Porte:</b> '+esc(sizeLabels[r.porte]||r.porte)+'</div>'
     +'<div class="booking-card-meta"><b>Espécie:</b> '+esc(speciesLabel(r))+' · <b>Raça:</b> '+esc(breedLabel(r))+'</div>'
     +'<div class="booking-card-meta"><b>Transporte:</b> '+esc(transportLabel(r))+'</div>'
-    +'<div class="booking-card-meta"><b>Serviço:</b> '+esc(serviceName(r.servico_id))+'</div>'
+    +'<div class="booking-card-meta"><b>Serviço:</b> '+esc(serviceName(r.servico_id))+' · <b>Pelagem:</b> '+esc(r.pelagem||'Não informada')+'</div>'
+    +'<div class="booking-card-meta"><b>Adicionais:</b> '+esc(extrasNames(r.adicionais))+'</div>'
     +'<div class="booking-card-meta"><b>Endereço:</b> '+esc(addressOf(r))+'</div>'+actions+'</article>';
 }
 async function decide(id,decision){
@@ -137,7 +139,8 @@ function printSchedule(){
       ?'<div class="booking-print-reason">'+esc(reasonLabels[prog.motivo_recusa]||'')+
         (prog.justificativa_outro?' · '+esc(prog.justificativa_outro):'')+'</div>':'');
     return '<tr><td>'+(i+1)+'</td><td><b>'+esc(r.pet_nome)+'</b><div>'+esc(r.tutor_nome)+'</div>'
-      +'<div>'+esc(speciesLabel(r))+' · '+esc(breedLabel(r))+'</div></td>'
+      +'<div>'+esc(speciesLabel(r))+' · '+esc(breedLabel(r))+'</div>'
+      +'<div>Adicionais: '+esc(extrasNames(r.adicionais))+'</div></td>'
       +'<td>'+esc(sizeLabels[r.porte]||r.porte)+'</td>'
       +'<td>'+esc(serviceName(r.servico_id))+'</td>'
       +'<td>'+esc(transportLabel(r))+'</td>'
@@ -153,7 +156,7 @@ function printSchedule(){
     +'<table class="booking-print-table"><thead><tr><th>#</th><th>Pet / Tutor</th>'
     +'<th>Porte</th><th>Serviço</th><th>Transporte</th><th>Endereço</th><th>Situação</th></tr></thead>'
     +'<tbody>'+(rows||'<tr><td colspan="7">Nenhum agendamento aprovado nesta data.</td></tr>')+'</tbody></table>'
-    +'<footer class="booking-print-footer">Versão 2.0.0 · Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA · Relatório de programação · Impresso em '
+    +'<footer class="booking-print-footer">Versão 2.1.0 · Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA · Relatório de programação · Impresso em '
     +esc(new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Sao_Paulo'}).format(new Date()))
     +'</footer>';
   sheet.hidden=false;

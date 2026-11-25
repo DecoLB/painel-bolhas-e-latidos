@@ -23,6 +23,16 @@ const boolText = value => value ? 'Sim' : 'Não';
 const especieLabel = r => r.especie==='gato'?'Gato':r.especie==='cachorro'?'Cachorro':'Não informada';
 const racaLabel = r => r.raca || 'Não informada';
 const transporteLabel = r => r.transporte_bolhas===true?'Bolhas & Latidos':r.transporte_bolhas===false?'Tutor':'Não informado';
+const manejoLabels={nao_se_aplica:'Não se aplica',ansioso:'Pet Ansioso',agressivo:'Pet Agressivo',idoso:'Pet Idoso'};
+const manejoLabel=r=>manejoLabels[r.manejo]||'Não informado';
+const additionalNames=ids=>(ids||[]).map(id=>state.additionalCatalog.find(a=>a.id===id)?.nome||'Adicional indisponível').join(', ')||'Nenhum';
+const chosenAdditions=()=>[...document.querySelectorAll('#entryAdditionalList input[type="checkbox"]:checked')].map(el=>el.value);
+function renderEntryAdditionalList(){
+  const node=byId('entryAdditionalList'),checked=new Set(chosenAdditions());
+  node.innerHTML=state.additionalCatalog.filter(a=>a.ativo).map(a=>
+    '<label class="extra-item"><input type="checkbox" value="'+esc(a.id)+'"'+(checked.has(a.id)?' checked':'')+'><span>'+esc(a.nome)+'</span></label>'
+  ).join('')||'<small>Sem adicionais cadastrados</small>';
+}
 function renderEntryBreeds(){
   const species=byId('entrySpecies').value;
   const input=byId('entryBreed'),old=input.value;
@@ -45,7 +55,7 @@ function renderEntryBreeds(){
 const statusBadge = (tone,label) => '<span class="tag farol-tag status-'+tone+'"><span class="farol-dot" aria-hidden="true"></span>'+esc(label)+'</span>';
 const setFarol = (id,tone) => { const node=byId(id)?.closest('.stat-card, .insight-mini'); if(node)node.dataset.farol=tone; };
 
-const state = { services:[], professionals:[], attendances:[], breeds:[], images:new Map(), channel:null, busy:false, photo:null, stream:null, page:'admin', role:null };
+const state = { services:[], professionals:[], attendances:[], breeds:[], additionalCatalog:[], images:new Map(), channel:null, busy:false, photo:null, stream:null, page:'admin', role:null };
 const serviceName = id => state.services.find(s => s.id === id)?.nome || 'Serviço indisponível';
 const professionalName = id => state.professionals.find(p => p.id === id)?.nome || '—';
 
@@ -134,7 +144,8 @@ async function refresh() {
     supabase.from('servicos').select('*').order('nome'),
     supabase.from('profissionais').select('*').order('nome'),
     supabase.from('atendimentos').select('*').order('criado_em',{ascending:true}).limit(2000),
-    supabase.from('catalogo_racas').select('especie,nome').order('nome')
+    supabase.from('catalogo_racas').select('especie,nome').order('nome'),
+    supabase.from('catalogo_adicionais').select('id,nome,ativo').order('nome')
   ]);
   const problem = results.find(r => r.error);
   if(problem) { setConnection('error'); notify('Falha na sincronização: '+problem.error.message,'error'); return; }
@@ -142,6 +153,7 @@ async function refresh() {
   state.professionals = results[1].data || [];
   state.attendances = results[2].data || [];
   state.breeds = results[3].data || [];
+  state.additionalCatalog=results[4].data||[];
   await loadImageUrls();
   setConnection('ok');
   byId('lastUpdated').textContent = 'Atualizado em '+dateFmt.format(new Date())+' às '+hourOf(new Date());
@@ -176,6 +188,7 @@ function renderOptions() {
   sel.innerHTML = '<option value="">Selecione um serviço</option>'+state.services.filter(s=>s.ativo).map(s=>'<option value="'+esc(s.id)+'">'+esc(s.nome)+'</option>').join('');
   if ([...sel.options].some(o=>o.value===keep)) sel.value=keep;
   renderEntryBreeds();
+  renderEntryAdditionalList();
 }
 function renderAdminLists() {
   byId('servicesList').innerHTML = state.services.map(s=>
@@ -226,8 +239,8 @@ function renderReport() {
   renderChart('breedsChart',[...byBreed].map(([name,count])=>({name,count})));
   renderChart('speciesChart',[...bySpecies].map(([name,count])=>({name,count})));
   byId('reportTable').innerHTML = dailyRecords.map(r=>
-    '<tr><td>'+esc(r.animal_nome)+'</td><td>'+esc(especieLabel(r))+'</td><td>'+esc(racaLabel(r))+'</td><td>'+esc(transporteLabel(r))+'</td><td>'+esc(serviceName(r.servico_id))+'</td><td>'+esc(professionalName(r.profissional_id))+'</td><td>'+hourOf(r.criado_em)+'</td><td>'+hourOf(r.iniciado_em)+'</td><td>'+hourOf(r.concluido_em)+'</td><td>'+duration(minutesBetween(r.criado_em,r.iniciado_em))+'</td><td>'+duration(minutesBetween(r.iniciado_em,r.concluido_em))+'</td><td>'+statusBadge(r.status==='concluido'?'neutral':r.status==='em_execucao'?'success':'warning',r.status==='concluido'?'Concluído':r.status==='em_execucao'?'Em execução':'Aguardando')+'</td></tr>'
-  ).join('') || '<tr><td colspan="12">Nenhum atendimento registrado na data selecionada.</td></tr>';
+    '<tr><td>'+esc(r.animal_nome)+'</td><td>'+esc(especieLabel(r))+'</td><td>'+esc(racaLabel(r))+'</td><td>'+esc(transporteLabel(r))+'</td><td>'+esc(serviceName(r.servico_id))+'</td><td>'+esc(additionalNames(r.adicionais))+'</td><td>'+esc(manejoLabel(r))+'</td><td>'+esc(professionalName(r.profissional_id))+'</td><td>'+hourOf(r.criado_em)+'</td><td>'+hourOf(r.iniciado_em)+'</td><td>'+hourOf(r.concluido_em)+'</td><td>'+duration(minutesBetween(r.criado_em,r.iniciado_em))+'</td><td>'+duration(minutesBetween(r.iniciado_em,r.concluido_em))+'</td><td>'+statusBadge(r.status==='concluido'?'neutral':r.status==='em_execucao'?'success':'warning',r.status==='concluido'?'Concluído':r.status==='em_execucao'?'Em execução':'Aguardando')+'</td></tr>'
+  ).join('') || '<tr><td colspan="14">Nenhum atendimento registrado na data selecionada.</td></tr>';
 }
 
 function renderInsights(date, done) {
@@ -342,6 +355,8 @@ function renderQueues() {
   byId('waitingList').innerHTML=waiting.map(r=>
     '<article class="pet-card farol-card farol-warning">'+photoMarkup(r)+'<div class="pet-info"><div class="pet-head"><strong>'+esc(r.animal_nome)+'</strong>'+scheduleLabel(r)+'</div><div class="pet-meta">'+esc(serviceName(r.servico_id))+' · Entrada '+hourOf(r.criado_em)+'</div>'+
     '<div class="pet-detail"><b>Espécie:</b> '+esc(especieLabel(r))+' · <b>Raça:</b> '+esc(racaLabel(r))+'</div>'+
+    '<div class="pet-detail"><b>Adicionais:</b> '+esc(additionalNames(r.adicionais))+'</div>'+
+    '<div class="pet-detail"><b>Manejo:</b> '+esc(manejoLabel(r))+'</div>'+
     (r.transporte_bolhas!==null ? '<div class="pet-detail"><b>Transporte:</b> '+esc(transporteLabel(r))+'</div>' : '')+
     (r.tutor ? '<div class="pet-detail">Tutor: '+esc(r.tutor)+'</div>' : '')+
     (r.observacao ? '<div class="pet-detail">Obs.: '+esc(r.observacao)+'</div>' : '')+
@@ -349,7 +364,7 @@ function renderQueues() {
     '<button type="button" class="btn btn-primary" data-assume="'+esc(r.id)+'">Iniciar</button></div></div></article>'
   ).join('') || '<div class="empty">Nenhum animal aguardando atendimento.</div>';
   byId('activeList').innerHTML=active.map(r=>
-    '<article class="pet-card farol-card farol-success">'+photoMarkup(r)+'<div class="pet-info"><div class="pet-head"><strong>'+esc(r.animal_nome)+'</strong>'+statusBadge('success','Em execução')+'</div><div class="pet-meta">'+esc(serviceName(r.servico_id))+'</div><div class="pet-detail"><b>Espécie:</b> '+esc(especieLabel(r))+' · <b>Raça:</b> '+esc(racaLabel(r))+'</div><div class="pet-detail">Profissional: <strong>'+esc(professionalName(r.profissional_id))+'</strong></div><div class="pet-detail">Início: '+hourOf(r.iniciado_em)+'</div><div class="pet-actions"><button type="button" class="btn btn-primary" data-finish="'+esc(r.id)+'">Finalizar atendimento</button></div></div></article>'
+    '<article class="pet-card farol-card farol-success">'+photoMarkup(r)+'<div class="pet-info"><div class="pet-head"><strong>'+esc(r.animal_nome)+'</strong>'+statusBadge('success','Em execução')+'</div><div class="pet-meta">'+esc(serviceName(r.servico_id))+'</div><div class="pet-detail"><b>Espécie:</b> '+esc(especieLabel(r))+' · <b>Raça:</b> '+esc(racaLabel(r))+'</div><div class="pet-detail"><b>Adicionais:</b> '+esc(additionalNames(r.adicionais))+'</div><div class="pet-detail"><b>Manejo:</b> '+esc(manejoLabel(r))+'</div><div class="pet-detail">Profissional: <strong>'+esc(professionalName(r.profissional_id))+'</strong></div><div class="pet-detail">Início: '+hourOf(r.iniciado_em)+'</div><div class="pet-actions"><button type="button" class="btn btn-primary" data-finish="'+esc(r.id)+'">Finalizar atendimento</button></div></div></article>'
   ).join('') || '<div class="empty">Nenhum atendimento em execução.</div>';
 }
 function renderTV() {
@@ -362,6 +377,8 @@ function renderTV() {
     +photoMarkup(r,'tv-photo')
     +'<div class="tv-card-body"><strong class="tv-pet-name">'+esc(r.animal_nome)+'</strong>'
     +'<div class="tv-data-line"><span>Raça</span><strong>'+esc(racaLabel(r))+'</strong></div>'
+    +'<div class="tv-data-line"><span>Adicionais</span><strong>'+esc(additionalNames(r.adicionais))+'</strong></div>'
+    +'<div class="tv-data-line"><span>Manejo</span><strong>'+esc(manejoLabel(r))+'</strong></div>'
     +'<div class="tv-data-line"><span>Serviço</span><strong>'+esc(serviceName(r.servico_id))+'</strong></div>'
     +(running
       ? '<div class="tv-data-line"><span>Responsável</span><strong>'+esc(professionalName(r.profissional_id))+'</strong></div>'
@@ -450,9 +467,22 @@ function bindEvents() {
     e.preventDefault();
     const nome=byId('serviceName').value.trim();
     if(!nome)return;
-    const {error}=await supabase.from('servicos').insert({nome});
-    if(error)notify(error.message,'error');
-    else{e.target.reset();notify('Serviço cadastrado.','success');await refresh();}
+    const {data:novo,error}=await supabase.from('servicos').insert({nome}).select('id').single();
+    if(error){notify(error.message,'error');return;}
+    try{
+      const prices=['curto','medio','longo'].map(pelagem=>({
+        pelagem,value:byId('newPrice'+pelagem[0].toUpperCase()+pelagem.slice(1)).value
+      })).filter(x=>x.value!=='');
+      if(prices.length){
+        const {error:priceError}=await supabase.from('precos_servicos').upsert(prices.map(x=>({
+          servico_id:novo.id,especie:'cachorro',porte:'pequeno',
+          pelagem:x.pelagem,valor_centavos:Math.round(Number(x.value)*100)
+        })));
+        if(priceError)throw priceError;
+      }
+      e.target.reset();notify('Serviço e valores cadastrados.','success');
+    }catch(err){notify('Serviço criado, mas valores não salvos: '+err.message,'error');}
+    await refresh();window.dispatchEvent(new Event('bolhas:catalog-changed'));
   });
   byId('professionalForm').addEventListener('submit',async e=>{
     e.preventDefault();
@@ -509,9 +539,12 @@ function bindEvents() {
     const especie=byId('entrySpecies').value;
     const raca=especie==='gato'?'Gato/Felino':byId('entryBreed').value;
     const servico_id=byId('entryService').value,agendado=byId('isScheduled').value==='sim';
+    const manejo=byId('entryManejo').value,pelagem=byId('entryPelagem').value||null;
+    const adicionais=chosenAdditions();
     const horario_agendado=agendado?byId('scheduledTime').value:null;
     if(!animal_nome||!servico_id||!byId('isScheduled').value||(agendado&&!horario_agendado)||
-      !['cachorro','gato'].includes(especie)||!state.breeds.some(b=>b.especie===especie&&b.nome===raca)){
+      !['cachorro','gato'].includes(especie)||!state.breeds.some(b=>b.especie===especie&&b.nome===raca)||
+      !Object.hasOwn(manejoLabels,manejo)){
       notify('Preencha os campos obrigatórios, inclusive espécie e raça.','error');return;
     }
     let foto_path=null;
@@ -524,10 +557,11 @@ function bindEvents() {
       }
       const {error}=await supabase.from('atendimentos').insert({
         animal_nome,tutor:tutor||null,especie,raca,servico_id,agendado,horario_agendado,
+        manejo,pelagem,adicionais,
         observacao:byId('entryObs').value.trim()||null,foto_path
       });
       if(error)throw error;
-      byId('entryForm').reset();renderEntryBreeds();state.photo=null;updatePhotoPreview();updateSchedule();
+      byId('entryForm').reset();renderEntryBreeds();renderEntryAdditionalList();state.photo=null;updatePhotoPreview();updateSchedule();
       byId('obsCounter').textContent='0';notify('Entrada registrada e enviada à fila.','success');
       await refresh();
     }catch(err){

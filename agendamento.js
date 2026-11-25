@@ -7,7 +7,50 @@ const addDays=(iso,n)=>{const d=new Date(iso+"T12:00:00Z");d.setUTCDate(d.getUTC
 const pretty=iso=>new Intl.DateTimeFormat("pt-BR",{timeZone:"UTC",day:"2-digit",month:"long",year:"numeric",weekday:"long"}).format(new Date(iso+"T12:00:00Z"));
 const weekday=iso=>new Intl.DateTimeFormat("pt-BR",{weekday:"short",timeZone:"UTC"}).format(new Date(iso+"T12:00:00Z")).replace(".","");
 const dateLabel=iso=>iso.slice(8,10)+"/"+iso.slice(5,7);
-let racas=[];
+let racas=[],adicionais=[];
+let estimateToken=0,estimateTimer=null;
+const checkExtras=()=>[...document.querySelectorAll('#bookingAdditionalList input[type="checkbox"]:checked')].map(x=>x.value);
+function updateIncluded(){
+  const label=byId('servicoPet').selectedOptions[0]?.textContent.toLowerCase()||'';
+  byId('includedNotice').hidden=!(label.includes('banho')||label.includes('tosa'));
+}
+const money=cents=>(cents/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+function scheduleEstimate(){
+  clearTimeout(estimateTimer);
+  const required=['especiePet','portePet','pelagemPet','servicoPet','transporteBolhas'];
+  if(required.some(id=>!byId(id).value)){
+    ++estimateToken;
+    byId('estimateTotal').textContent='Selecione serviço, pelagem e transporte';
+    byId('estimateInfo').textContent='A prévia será calculada automaticamente.';
+    return;
+  }
+  const token=++estimateToken;
+  byId('estimateTotal').textContent='Calculando estimativa...';
+  estimateTimer=setTimeout(async()=>{
+    try{
+      const body={
+        acao:'estimar',especie:byId('especiePet').value,porte:byId('portePet').value,
+        pelagem:byId('pelagemPet').value,servico_id:byId('servicoPet').value,
+        transporte_bolhas:byId('transporteBolhas').value==='sim',
+        adicionais:checkExtras()
+      };
+      const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),cache:'no-store'});
+      const result=await response.json();
+      if(token!==estimateToken)return;
+      if(!response.ok)throw Error(result.erro||'Estimativa indisponível');
+      byId('estimateTotal').textContent=result.sob_consulta
+        ? (result.tem_parcial?'Estimativa parcial: '+money(result.total_estimado_centavos):'Valor sob consulta')
+        : 'Total estimado: '+money(result.total_estimado_centavos);
+      byId('estimateInfo').textContent=result.sob_consulta
+        ? 'Há itens ou condições sem preço final definido. A equipe confirmará o valor completo.'
+        : 'Estimativa para o conjunto de serviços selecionados.';
+    }catch(e){
+      if(token!==estimateToken)return;
+      byId('estimateTotal').textContent='Estimativa indisponível';
+      byId('estimateInfo').textContent='O valor será confirmado pela equipe.';
+    }
+  },250);
+}
 const addressIds=["cep","rua","numero","complemento","bairro","cidade","uf"];
 const requiredAddressIds=["cep","rua","numero","cidade","uf"];
 function updateSpecies(){
@@ -41,8 +84,8 @@ function updateTransport(){
   }
   if(!show){++cepLoad;byId("cepMessage").textContent="Ao digitar 8 números, buscaremos o endereço.";}
 }
-byId("especiePet").addEventListener("change",updateSpecies);
-byId("transporteBolhas").addEventListener("change",updateTransport);
+byId("especiePet").addEventListener("change",()=>{updateSpecies();scheduleEstimate();});
+byId("transporteBolhas").addEventListener("change",()=>{updateTransport();scheduleEstimate();});
 function error(message){byId("publicError").textContent=message;byId("publicError").hidden=false;byId("publicError").scrollIntoView({behavior:"smooth",block:"nearest"});}
 function clearError(){byId("publicError").hidden=true;}
 function renderCalendar(){
@@ -72,13 +115,23 @@ async function loadServices(){
   try{
     const res=await fetch(endpoint,{method:"GET",cache:"no-store"});
     const data=await res.json();
-    if(!res.ok || !Array.isArray(data.servicos)||!Array.isArray(data.racas))throw Error(data.erro||"Não foi possível consultar os serviços e raças.");
-    racas=data.racas;updateSpecies();
+    if(!res.ok || !Array.isArray(data.servicos)||!Array.isArray(data.racas)||!Array.isArray(data.adicionais))throw Error(data.erro||"Não foi possível consultar os serviços e raças.");
+    racas=data.racas;adicionais=data.adicionais;updateSpecies();
+    const extraList=byId('bookingAdditionalList');
+    extraList.innerHTML='';
+    for(const additional of adicionais){
+      const label=document.createElement('label');label.className='extra-item';
+      const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.value=additional.id;
+      checkbox.addEventListener('change',scheduleEstimate);
+      const span=document.createElement('span');span.textContent=additional.nome;
+      label.append(checkbox,span);extraList.append(label);
+    }
     select.innerHTML='<option value="">Selecione o serviço</option>';
     for(const s of data.servicos){
       const o=document.createElement("option");o.value=s.id;o.textContent=s.nome;select.append(o);
     }
     if(data.servicos.length===0)throw Error("Nenhum serviço disponível para agendamento.");
+    updateIncluded();scheduleEstimate();
   }catch(e){error(e.message||"Não foi possível carregar os serviços.");select.innerHTML='<option value="">Serviços indisponíveis</option>';}
 }
 let cepLoad=0;
@@ -106,7 +159,8 @@ function values(){
   return {tutor_nome:byId("tutorNome").value.trim(),pet_nome:byId("petNome").value.trim(),
     especie:byId("especiePet").value,
     raca:byId("especiePet").value==="gato"?"Gato/Felino":byId("racaPet").value,
-    porte:byId("portePet").value,servico_id:byId("servicoPet").value,data_desejada:byId("desiredDate").value,
+    porte:byId("portePet").value,pelagem:byId("pelagemPet").value,
+    servico_id:byId("servicoPet").value,adicionais:checkExtras(),data_desejada:byId("desiredDate").value,
     transporte_bolhas:transport,
     cep:transport?byId("cep").value.replace(/\D/g,""):null,
     rua:transport?byId("rua").value.trim():null,numero:transport?byId("numero").value.trim():null,
@@ -125,6 +179,7 @@ byId("bookingForm").addEventListener("submit",async event=>{
   const iso=byId("desiredDate").value,hoje=dateIso();
   if(!iso || iso<addDays(hoje,1) || iso>addDays(hoje,30)){error("Selecione uma data entre amanhã e os próximos 30 dias.");return;}
   if(!byId("bookingForm").reportValidity())return;
+  if(!byId('pelagemPet').value){error('Selecione o tipo de pelagem.');return;}
   if(!byId("especiePet").value || (byId("especiePet").value==="cachorro"&&!byId("racaPet").value)){
     error("Selecione a espécie e a raça do pet.");return;
   }
@@ -141,11 +196,15 @@ byId("bookingForm").addEventListener("submit",async event=>{
   finally{button.disabled=false;button.textContent="Enviar solicitação de agendamento";}
 });
 byId("newBooking").addEventListener("click",()=>{
-  byId("bookingForm").reset();byId("desiredDate").value="";renderCalendar();updateSpecies();updateTransport();
+  byId("bookingForm").reset();byId("desiredDate").value="";renderCalendar();updateSpecies();updateTransport();updateIncluded();scheduleEstimate();
   byId("bookingSuccess").hidden=true;byId("requestCard").hidden=false;clearError();
   byId("requestCard").scrollIntoView({behavior:"smooth",block:"start"});
 });
+for(const id of ['portePet','pelagemPet','servicoPet']){
+  byId(id).addEventListener('change',()=>{updateIncluded();scheduleEstimate();});
+}
 renderCalendar();
 updateTransport();
 updateSpecies();
 loadServices();
+scheduleEstimate();

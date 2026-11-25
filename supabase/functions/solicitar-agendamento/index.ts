@@ -36,12 +36,15 @@ Deno.serve(async (req:Request):Promise<Response>=>{
   const db=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}});
 
   if(req.method==="GET"){
-    const [services,breeds]=await Promise.all([
+    const [services,breeds,extras]=await Promise.all([
       db.from("servicos").select("id,nome").eq("ativo",true).order("nome"),
-      db.from("catalogo_racas").select("especie,nome").order("nome")
+      db.from("catalogo_racas").select("especie,nome").order("nome"),
+      db.from("catalogo_adicionais").select("id,nome").eq("ativo",true).order("nome")
     ]);
-    if(services.error||breeds.error) return respond({erro:"Não foi possível carregar os dados do formulário."},503);
-    return respond({servicos:services.data||[],racas:breeds.data||[]});
+    if(services.error||breeds.error||extras.error)
+      return respond({erro:"Não foi possível carregar os dados do formulário."},503);
+    // Não enviar preços unitários ao navegador.
+    return respond({servicos:services.data||[],racas:breeds.data||[],adicionais:extras.data||[]});
   }
 
   let input:Record<string,unknown>;
@@ -52,6 +55,60 @@ Deno.serve(async (req:Request):Promise<Response>=>{
     input=JSON.parse(raw);
     if(!input || typeof input!=="object" || Array.isArray(input)) throw Error();
   }catch{return respond({erro:"Dados inválidos."},400);}
+
+  // Prévia de preço computada no servidor. Nunca devolve preços unitários.
+  // Solicitações de orçamento não consomem a cota de pedidos de agendamento.
+  const isEstimate=input.acao==="estimar";
+  const validId=(id:unknown)=>typeof id==="string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  const selExtras=input.adicionais;
+  const selected=Array.isArray(selExtras)?selExtras:[];
+  if(!Array.isArray(selExtras) || selected.length>12 ||
+    selected.some(x=>!validId(x)) || new Set(selected).size!==selected.length){
+    return respond({erro:"Seleção de serviços adicionais inválida."},400);
+  }
+  const coat=text(input.pelagem,8);
+  if(!["curto","medio","longo"].includes(coat))return respond({erro:"Informe a pelagem do pet."},400);
+  if(isEstimate){
+    if(!["cachorro","gato"].includes(input.especie) ||
+      !["pequeno","medio","grande"].includes(input.porte) ||
+      !validId(input.servico_id) || typeof input.transporte_bolhas!=="boolean"){
+      return respond({erro:"Escolha espécie, porte, serviço e transporte para calcular a estimativa."},400);
+    }
+    const [service,rate,availableExtras,extraRates]=await Promise.all([
+      db.from("servicos").select("id").eq("id",input.servico_id).eq("ativo",true).maybeSingle(),
+      db.from("precos_servicos").select("valor_centavos")
+        .eq("servico_id",input.servico_id).eq("especie",input.especie)
+        .eq("porte",input.porte).eq("pelagem",coat).maybeSingle(),
+      db.from("catalogo_adicionais").select("id").eq("ativo",true).in("id",selected.length?selected:["00000000-0000-0000-0000-000000000000"]),
+      db.from("precos_adicionais").select("adicional_id,valor_centavos,modalidade").in("adicional_id",selected.length?selected:["00000000-0000-0000-0000-000000000000"])
+    ]);
+    if(service.error||rate.error||availableExtras.error||extraRates.error)
+      return respond({erro:"Não foi possível calcular a estimativa no momento."},503);
+    if(!service.data || availableExtras.data?.length!==selected.length)
+      return respond({erro:"Verifique os serviços selecionados."},400);
+    let total=rate.data?.valor_centavos??0;
+    let sob_consulta=!rate.data;
+    let tem_minimo=false;
+    for(const id of selected){
+      const item=extraRates.data?.find(x=>x.adicional_id===id);
+      if(!item || item.modalidade==="sob_consulta" || item.valor_centavos==null){
+        sob_consulta=true;continue;
+      }
+      total+=item.valor_centavos;
+      if(item.modalidade==="a_partir"){tem_minimo=true;sob_consulta=true;}
+    }
+    // Transporte é sempre conferido pela equipe: não inferir quilometragem nem tarifa.
+    if(input.transporte_bolhas)sob_consulta=true;
+    return respond({
+      total_estimado_centavos:total,
+      tem_parcial:total>0,
+      sob_consulta,
+      tem_minimo,
+      aviso:"Os valores apresentados são uma prévia, que será confirmada quando entrarem em contato."
+    });
+  }
+  if(input.acao && input.acao!=="solicitar")return respond({erro:"Operação inválida."},400);
 
   // Campo invisível honeypot: bots costumam preencher.
   if(input.website) return respond({ok:true,mensagem:"Solicitação recebida para análise."},202);
@@ -103,6 +160,7 @@ Deno.serve(async (req:Request):Promise<Response>=>{
 
   const {error}=await db.from("solicitacoes_agendamento").insert({
     tutor_nome,pet_nome,porte,especie,raca,transporte_bolhas,servico_id,data_desejada,
+    pelagem:coat,adicionais:selected,
     cep:transporte_bolhas?cep:null,rua:transporte_bolhas?rua:null,
     numero:transporte_bolhas?numero:null,
     complemento:transporte_bolhas?(complemento||null):null,

@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="./visual-v3.css?v=180">
   <link rel="stylesheet" href="./farol-v19.css?v=190">
   <link rel="stylesheet" href="./especie-v20.css?v=200">
+  <link rel="stylesheet" href="./comercial-v21.css?v=210">
 </head>
 <body class="agendamento-publico">
   <header class="public-topbar">
@@ -38,8 +39,14 @@
           <div class="field"><label for="especiePet">Espécie <b>*</b></label><select id="especiePet" required><option value="">Selecione</option><option value="cachorro">Cachorro</option><option value="gato">Gato</option></select></div>
           <div class="field"><label for="racaPet">Raça <b>*</b></label><select id="racaPet" required disabled><option value="">Selecione a espécie primeiro</option></select><small id="racaMessage" class="public-help">Para gatos, será registrado Gato/Felino.</small></div>
           <div class="field"><label for="portePet">Porte <b>*</b></label><select id="portePet" required><option value="">Selecione o porte</option><option value="pequeno">Pequeno</option><option value="medio">Médio</option><option value="grande">Grande</option></select></div>
+          <div class="field"><label for="pelagemPet">Tipo de pelagem <b>*</b></label><select id="pelagemPet" required><option value="">Selecione</option><option value="curto">Curto</option><option value="medio">Médio</option><option value="longo">Longo</option></select></div>
           <div class="field"><label for="servicoPet">Serviço a realizar <b>*</b></label><select id="servicoPet" required><option value="">Carregando serviços...</option></select></div>
         </div>
+        <fieldset class="commercial-extras"><legend>Serviços adicionais <span>(opcional)</span></legend><div id="bookingAdditionalList" class="extras-checks"></div></fieldset>
+        <section id="includedNotice" class="included-notice" hidden>
+          <h3>Incluso no banho e tosa</h3>
+          <p>Corte de unha, limpeza de ouvido e acessórios (laços, gravatas e perfume) fazem parte do atendimento.</p>
+        </section>
         <div class="public-section-title"><span>2</span><h2>Data desejada</h2></div>
         <p class="public-help">Selecione uma data entre amanhã e os próximos 30 dias. Não é possível solicitar para hoje.</p>
         <div id="calendarRange" class="calendar-range" role="group" aria-label="Datas disponíveis para solicitação"></div>
@@ -67,6 +74,12 @@
         </div>
         </section>
         <div class="honeypot" aria-hidden="true"><label for="website">Deixe este campo vazio</label><input id="website" name="website" autocomplete="off" tabindex="-1"></div>
+        <section class="estimate-box" aria-live="polite">
+          <h3>Estimativa do atendimento</h3>
+          <div id="estimateTotal" class="estimate-total">Selecione serviço, pelagem e transporte</div>
+          <p id="estimateInfo" class="estimate-info"></p>
+          <p class="estimate-disclaimer"><strong>Os valores apresentados são uma prévia, que será confirmada quando entrarem em contato.</strong></p>
+        </section>
         <div class="public-disclaimer">Esta é uma <strong>solicitação</strong>, não uma confirmação. Seus dados serão utilizados para avaliação e organização do atendimento.</div>
         <button class="btn btn-primary btn-wide" id="sendBooking" type="submit">Enviar solicitação de agendamento</button>
       </form>
@@ -78,9 +91,9 @@
       <p class="public-help">A data selecionada ainda não está confirmada.</p>
       <button type="button" class="btn btn-outline" id="newBooking">Solicitar outro agendamento</button>
     </section>
-    <footer class="public-footer"><span>Bolhas & Latidos · Banho & Tosa · Veterinário</span><div class="legal-footer public-legal-footer"><span class="version-label">Versão 2.0.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
+    <footer class="public-footer"><span>Bolhas & Latidos · Banho & Tosa · Veterinário</span><div class="legal-footer public-legal-footer"><span class="version-label">Versão 2.1.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
   </main>
   <script src="./config.js?v=20261125-2"></script>
-  <script type="module" src="./agendamento.js?v=200"></script>
+  <script type="module" src="./agendamento.js?v=210"></script>
 </body>
 </html>

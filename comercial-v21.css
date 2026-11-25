@@ -1,0 +1,54 @@
+/* Comercial V2.1 — dinheiro só aparece no Administrador e na prévia pública. */
+.commercial-create-form,.commercial-price-form,.commercial-additional-form{
+ display:flex;flex-direction:column;gap:14px;max-width:100%;margin:18px 0 22px
+}
+.commercial-note{font-size:12px;color:#6A5E51;line-height:1.5;margin:4px 0 8px}
+.commercial-selectors,.commercial-price-row,.commercial-additional-form{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px
+}
+.commercial-additional-form{grid-template-columns:2fr 1fr 1fr auto;align-items:end}
+.commercial-price-form label,.commercial-create-form label,.commercial-additional-form label,
+.commercial-extra-row label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:750;min-width:0}
+.commercial-create-form .btn,.commercial-price-form .btn{align-self:flex-start}
+.commercial-divider{border-top:1px solid #EAD9C9;margin:22px 0}
+.commercial-addons-panel{margin-top:20px}
+.commercial-additional-list{display:grid;gap:10px}
+.commercial-extra-row{border:1px solid #EBD9C8;border-radius:13px;background:#FFFCF9;padding:13px;
+ display:grid;grid-template-columns:minmax(120px,1.5fr) minmax(110px,1fr) minmax(110px,1fr) auto auto;
+ align-items:center;gap:10px}
+.commercial-extra-row>strong{font-size:13px;overflow-wrap:anywhere}
+.commercial-extra-row>.btn{white-space:nowrap}
+.commercial-extras{padding:14px 16px;border:1px solid #E9D9C8;border-radius:14px;margin:16px 0;background:#FFFDFB;min-width:0}
+.commercial-extras legend{padding:0 6px;font-weight:800;font-size:14px}
+.commercial-extras legend span{font-weight:500;font-size:12px;color:#71675D}
+.extras-checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:9px}
+.extra-item{display:flex;align-items:center;gap:9px;border:1px solid #EDDED0;background:#fff;border-radius:10px;padding:10px;
+ cursor:pointer;font-size:13px;font-weight:650;transition:background .15s ease,border-color .15s ease}
+.extra-item:hover,.extra-item:has(input:checked){background:#FFF0E4;border-color:#F0AE70}
+.extra-item input{width:17px;height:17px;accent-color:#B84D03;flex:none}
+.included-notice{background:#F1F8F2;border-left:4px solid #24734B;padding:14px 17px;border-radius:10px;margin:10px 0 20px}
+.included-notice h3{font-size:14px;color:#245E42;margin:0 0 5px}
+.included-notice p{font-size:12px;line-height:1.5;color:#345E48}
+.estimate-box{background:linear-gradient(145deg,#FFF7F0,#FFFEFC);border:1px solid #EACDAE;padding:19px;
+ border-radius:15px;margin:18px 0}
+.estimate-box h3{font-size:16px;font-weight:850;margin:0 0 10px}
+.estimate-total{font-weight:900;font-size:clamp(19px,2vw,27px);color:#A64700;line-height:1.2}
+.estimate-info{color:#695447;font-size:12px;margin:9px 0}
+.estimate-disclaimer{margin-top:15px;padding-top:12px;border-top:1px solid #F0DCCB;color:#504A44;
+ font-size:12px;line-height:1.6}
+.preentrada-manejo-label{font-size:12px;font-weight:750;display:flex;flex-direction:column;gap:7px;margin:8px 0;flex:1 1 100%}
+.preentrada-manejo-label select{font-weight:600;width:100%}
+#page-telao .tv-data-line>strong{font-weight:500;font-size:clamp(11px,1vw,15px)}
+@media(max-width:1100px){
+ .commercial-additional-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .commercial-extra-row{grid-template-columns:1fr 1fr}
+}
+@media(max-width:700px){
+ .commercial-selectors,.commercial-price-row,.commercial-additional-form{grid-template-columns:1fr}
+ .commercial-extra-row{grid-template-columns:1fr}
+ .extras-checks{grid-template-columns:1fr}
+ .commercial-additional-form .btn{width:100%}
+}
+@media print{
+ .commercial-create-form,.commercial-price-form,.commercial-additional-form,.commercial-additional-list{display:none!important}
+}
