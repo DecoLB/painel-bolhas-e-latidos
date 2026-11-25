@@ -156,6 +156,7 @@ function renderChart(nodeId, items) {
 function renderReport() {
   const date=byId('reportDate').value || today();
   const done=state.attendances.filter(r=>r.status==='concluido' && dayOf(r.concluido_em)===date);
+  const dailyRecords=state.attendances.filter(r=>dayOf(r.criado_em)===date || dayOf(r.concluido_em)===date);
   const waiting=state.attendances.filter(r=>r.status==='aguardando').length;
   const active=state.attendances.filter(r=>r.status==='em_execucao').length;
   const times=done.map(r=>minutesBetween(r.iniciado_em,r.concluido_em)).filter(n=>n!==null);
@@ -171,9 +172,9 @@ function renderReport() {
   }
   renderChart('professionalsChart',[...byStaff].map(([name,count])=>({name,count})));
   renderChart('servicesChart',[...byService].map(([name,count])=>({name,count})));
-  byId('reportTable').innerHTML = done.map(r=>
-    '<tr><td>'+esc(r.animal_nome)+'</td><td>'+esc(serviceName(r.servico_id))+'</td><td>'+esc(professionalName(r.profissional_id))+'</td><td>'+hourOf(r.criado_em)+'</td><td>'+hourOf(r.iniciado_em)+'</td><td>'+hourOf(r.concluido_em)+'</td><td>'+duration(minutesBetween(r.criado_em,r.iniciado_em))+'</td><td>'+duration(minutesBetween(r.iniciado_em,r.concluido_em))+'</td></tr>'
-  ).join('') || '<tr><td colspan="8">Nenhum atendimento concluído na data selecionada.</td></tr>';
+  byId('reportTable').innerHTML = dailyRecords.map(r=>
+    '<tr><td>'+esc(r.animal_nome)+'</td><td>'+esc(serviceName(r.servico_id))+'</td><td>'+esc(professionalName(r.profissional_id))+'</td><td>'+hourOf(r.criado_em)+'</td><td>'+hourOf(r.iniciado_em)+'</td><td>'+hourOf(r.concluido_em)+'</td><td>'+duration(minutesBetween(r.criado_em,r.iniciado_em))+'</td><td>'+duration(minutesBetween(r.iniciado_em,r.concluido_em))+'</td><td>'+esc(r.status==='concluido'?'Concluído':r.status==='em_execucao'?'Em execução':'Aguardando')+'</td></tr>'
+  ).join('') || '<tr><td colspan="9">Nenhum atendimento registrado na data selecionada.</td></tr>';
 }
 function photoMarkup(r,cls='pet-photo') {
   const cached = state.images.get(r.foto_path);
