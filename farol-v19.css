@@ -1,0 +1,220 @@
+/* Bolhas & Latidos — Faróis de operação V1.9.0
+ * Contraste e texto preservados: cor nunca é a única informação de status.
+ * Verde: ativo/em execução/aprovado; amarelo: espera/pendente;
+ * vermelho: recusado/falha; cinza: concluído/sem dados/inativo.
+ * Indicadores não recebem alertas por limiares não definidos. */
+:root{
+  --signal-success:#1F754B;
+  --signal-success-bg:#E4F3E9;
+  --signal-success-border:#A9D7BD;
+  --signal-warning:#996000;
+  --signal-warning-bg:#FFF4D8;
+  --signal-warning-border:#F2CD76;
+  --signal-danger:#AA312B;
+  --signal-danger-bg:#FCEAE8;
+  --signal-danger-border:#E9A9A4;
+  --signal-neutral:#59616B;
+  --signal-neutral-bg:#EFF1F3;
+  --signal-neutral-border:#CCD2D8;
+}
+
+/* Status expressos por texto e ponto, sem recorrer a emojis ou alterar o conteúdo. */
+.tag.farol-tag{
+  display:inline-flex;align-items:center;justify-content:flex-start;gap:7px;
+  width:max-content;max-width:100%;border:1px solid transparent;
+  border-radius:100px;font-weight:800;font-size:11px;line-height:1.25;
+  padding:6px 10px;white-space:normal;overflow-wrap:anywhere;
+}
+.farol-dot{
+  display:inline-block;flex:none;width:9px;height:9px;
+  border-radius:50%;background:currentColor;
+  box-shadow:0 0 0 3px rgba(255,255,255,.55);
+}
+.tag.farol-tag.status-success,
+.tag.farol-tag.approved,
+.tag.farol-tag.active,
+.tag.farol-tag.done{
+  color:var(--signal-success);background:var(--signal-success-bg);
+  border-color:var(--signal-success-border)
+}
+.tag.farol-tag.status-warning,
+.tag.farol-tag.warn{
+  color:var(--signal-warning);background:var(--signal-warning-bg);
+  border-color:var(--signal-warning-border)
+}
+.tag.farol-tag.status-danger,
+.tag.farol-tag.danger{
+  color:var(--signal-danger);background:var(--signal-danger-bg);
+  border-color:var(--signal-danger-border)
+}
+.tag.farol-tag.status-neutral,
+.tag.farol-tag.neutral,
+.tag.farol-tag.off,
+.tag.farol-tag.complete{
+  color:var(--signal-neutral);background:var(--signal-neutral-bg);
+  border-color:var(--signal-neutral-border)
+}
+
+/* Cobertura semântica para etiquetas antigas, sem alterar cadastros. */
+.tag.active{color:var(--signal-success);background:var(--signal-success-bg)}
+.tag.done{color:var(--signal-success);background:var(--signal-success-bg)}
+.tag.warn{color:var(--signal-warning);background:var(--signal-warning-bg)}
+.tag.off{color:var(--signal-neutral);background:var(--signal-neutral-bg)}
+.tag.danger{color:var(--signal-danger);background:var(--signal-danger-bg)}
+.tag.neutral{color:var(--signal-neutral);background:var(--signal-neutral-bg)}
+
+/* Farol nos indicadores quantitativos; valor zero não é automaticamente crítico. */
+.stat-card[data-farol],.insight-mini[data-farol]{position:relative}
+.stat-card[data-farol]::after,.insight-mini[data-farol]::after{
+  content:"";position:absolute;top:18px;right:19px;
+  width:11px;height:11px;border-radius:50%;box-shadow:0 0 0 4px var(--farol-bg)
+}
+.stat-card[data-farol],.insight-mini[data-farol]{--farol-color:var(--signal-neutral);--farol-bg:var(--signal-neutral-bg)}
+.stat-card[data-farol="success"],.insight-mini[data-farol="success"]{
+  --farol-color:var(--signal-success);--farol-bg:var(--signal-success-bg);
+}
+.stat-card[data-farol="warning"],.insight-mini[data-farol="warning"]{
+  --farol-color:var(--signal-warning);--farol-bg:var(--signal-warning-bg);
+}
+.stat-card[data-farol="danger"],.insight-mini[data-farol="danger"]{
+  --farol-color:var(--signal-danger);--farol-bg:var(--signal-danger-bg);
+}
+.stat-card[data-farol]::after,.insight-mini[data-farol]::after{
+  background:var(--farol-color)
+}
+.stat-card[data-farol] strong,.insight-mini[data-farol] strong{
+  color:var(--farol-color)
+}
+.stat-label,.insight-mini>span{padding-right:16px}
+
+/* Legenda curta no gerencial: leitura das cores sem ambiguidades. */
+.farol-legend{display:flex;justify-content:flex-start;align-items:center;flex-wrap:wrap;
+  gap:8px 18px;color:#5C554F;font-size:11px;margin:0 0 17px}
+.farol-legend>span{display:inline-flex;align-items:center;gap:6px}
+.farol-legend .farol-dot{width:9px;height:9px;box-shadow:none}
+.farol-legend .success{color:var(--signal-success)}
+.farol-legend .warning{color:var(--signal-warning)}
+.farol-legend .danger{color:var(--signal-danger)}
+.farol-legend .neutral{color:var(--signal-neutral)}
+.farol-legend strong{font-weight:750;color:#62574D}
+
+/* Borda lateral e hover suave, aplicados somente aos objetos com estado. */
+.farol-card{position:relative;--card-signal:var(--signal-neutral)}
+.farol-card.farol-success{--card-signal:var(--signal-success)}
+.farol-card.farol-warning{--card-signal:#C18A16}
+.farol-card.farol-danger{--card-signal:var(--signal-danger)}
+.farol-card.farol-neutral{--card-signal:var(--signal-neutral)}
+.pet-card.farol-card,.booking-card.farol-card,.preentrada-card.farol-card{
+  border-left:4px solid var(--card-signal)
+}
+.pet-card.farol-card:hover,.booking-card.farol-card:hover,
+.preentrada-card.farol-card:hover{box-shadow:0 11px 26px rgba(39,27,18,.10)}
+#page-telao .tv-card.farol-warning{border-left-color:#C18A16}
+#page-telao .tv-card.farol-success{border-left-color:var(--signal-success)}
+#page-telao .tv-card.farol-danger{border-left-color:var(--signal-danger)}
+#page-telao .tv-card.farol-neutral{border-left-color:var(--signal-neutral)}
+
+/* Operação e telão: status e contadores visíveis à distância. */
+.queue-panel .queue-heading,.tv-column h2{gap:10px}
+#page-telao .tv-column.farol-warning h2,
+#page-telao .tv-column.farol-success h2{position:relative;padding-left:18px}
+#page-telao .tv-column.farol-warning h2::before,
+#page-telao .tv-column.farol-success h2::before{
+  content:"";position:absolute;left:0;top:.53em;width:10px;height:10px;border-radius:50%
+}
+#page-telao .tv-column.farol-warning h2::before{background:var(--signal-warning)}
+#page-telao .tv-column.farol-success h2::before{background:var(--signal-success)}
+#page-telao .tv-column.farol-warning h2 span{color:var(--signal-warning)}
+#page-telao .tv-column.farol-success h2 span{color:var(--signal-success)}
+#page-telao .tv-status{display:inline-flex;max-width:100%;padding:0;background:none;border:0}
+#page-telao .tv-status .tag.farol-tag{font-size:clamp(10px,.91vw,13px);font-weight:800}
+#page-telao .tv-booked-label{font-size:11px;color:var(--signal-success);font-weight:750}
+
+/* Etiquetas de calendário e programação. */
+.booking-tab-count,.count-pill:not(.approved){
+  background:var(--signal-warning-bg);color:var(--signal-warning)
+}
+.count-pill.approved{background:var(--signal-success-bg);color:var(--signal-success)}
+.booking-legend .legend-dot.pending{background:var(--signal-warning)}
+.booking-legend .legend-dot.approved{background:var(--signal-success)}
+.booking-legend .legend-dot.rejected{background:var(--signal-danger)}
+.appointment-day .day-counts small:not(.ok){
+  background:var(--signal-warning-bg);color:var(--signal-warning)
+}
+.appointment-day .day-counts small.ok{
+  background:var(--signal-success-bg);color:var(--signal-success)
+}
+.booking-status-foot:has(.status-danger){
+  background:var(--signal-danger-bg);color:var(--signal-danger)
+}
+.preentrada-card.farol-danger .preentrada-info{
+  background:var(--signal-danger-bg);color:var(--signal-danger)
+}
+.preentrada-card.farol-success .preentrada-info{
+  background:var(--signal-success-bg);color:var(--signal-success)
+}
+
+/* Conectividade e mensagens (erro nunca usa o mesmo verde de sucesso). */
+.connection-pill{display:inline-flex;align-items:center;gap:7px;border:1px solid transparent}
+.connection-pill::before{content:"";width:8px;height:8px;border-radius:50%;
+  display:inline-block;background:currentColor;flex:none}
+.connection-pill.connection-success{
+  background:var(--signal-success-bg);color:var(--signal-success);border-color:var(--signal-success-border)
+}
+.connection-pill.connection-warning{
+  background:var(--signal-warning-bg);color:var(--signal-warning);border-color:var(--signal-warning-border)
+}
+.connection-pill.connection-danger{
+  background:var(--signal-danger-bg);color:var(--signal-danger);border-color:var(--signal-danger-border)
+}
+.toast{border-left:5px solid var(--signal-neutral);background:#333942}
+.toast.success{border-left-color:#6BC796;background:#155C3D}
+.toast.error{border-left-color:#FF9D91;background:#942C29}
+.public-alert{border-left:4px solid var(--signal-danger);color:var(--signal-danger);
+  background:var(--signal-danger-bg)}
+.public-success .success-mark{background:var(--signal-success-bg);color:var(--signal-success)}
+.public-disclaimer{border-left:4px solid var(--signal-warning)}
+
+/* Tabelas: o farol não aumenta as colunas nem altera os valores. */
+#reportTable td:last-child{white-space:nowrap}
+#reportTable td:last-child .farol-tag{font-size:11px}
+
+/* Zero é neutro; estados vazios não são falhas operacionais. */
+.empty,.booking-empty{color:var(--signal-neutral)}
+
+/* Acessibilidade: contraste, indicadores de forma e impressão. */
+.farol-tag:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+@media(max-width:720px){
+  .farol-legend{gap:7px 11px;font-size:10px}
+  .stat-card[data-farol]::after,.insight-mini[data-farol]::after{
+    top:12px;right:12px;width:9px;height:9px
+  }
+  #page-telao .tv-column.farol-warning h2,
+  #page-telao .tv-column.farol-success h2{padding-left:15px}
+  #reportTable td:last-child{white-space:normal}
+}
+@media print{
+  .tag.farol-tag{border:1px solid #AAA!important;color:#333!important;
+    background:#FFF!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .farol-dot{border:1px solid currentColor!important;background:currentColor!important}
+  .stat-card[data-farol] strong,.insight-mini[data-farol] strong{color:#222!important}
+  .farol-legend{display:none!important}
+}
+
+/* Contadores do Prestador distinguem espera e execução sem depender só da cor. */
+.queue-panel.queue-warning .queue-title h2,
+.queue-panel.queue-success .queue-title h2{position:relative;padding-left:17px}
+.queue-panel.queue-warning .queue-title h2::before,
+.queue-panel.queue-success .queue-title h2::before{
+  content:"";position:absolute;left:0;top:.5em;width:9px;height:9px;border-radius:50%
+}
+.queue-panel.queue-warning .queue-title h2::before{background:var(--signal-warning)}
+.queue-panel.queue-success .queue-title h2::before{background:var(--signal-success)}
+.queue-panel.queue-warning #waitingCount{
+  color:var(--signal-warning);background:var(--signal-warning-bg);
+  box-shadow:inset 0 0 0 1px var(--signal-warning-border)
+}
+.queue-panel.queue-success #activeCount{
+  color:var(--signal-success);background:var(--signal-success-bg);
+  box-shadow:inset 0 0 0 1px var(--signal-success-border)
+}

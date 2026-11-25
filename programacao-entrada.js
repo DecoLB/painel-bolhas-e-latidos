@@ -1,4 +1,4 @@
-import {supabase,state,notify,esc,today,refresh} from './app.js';
+import {supabase,state,notify,esc,today,refresh} from './app.js?v=190';
 
 const byId=id=>document.getElementById(id);
 const plusDays=(iso,n)=>{const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
@@ -52,9 +52,9 @@ function render(day=datePicker()){
   }
   byId('programacaoEntradaList').innerHTML=bookings.map(r=>{
     let badge='';
-    if(r.status==='programado')badge='<span class="tag warn">Pré-cadastrado</span>';
-    else if(r.status==='entrada_realizada')badge='<span class="tag done">✓ Entrada confirmada</span>';
-    else badge='<span class="tag off">Recusado</span>';
+    const tone=r.status==='recusado'?'danger':'success';
+    const statusText=r.status==='programado'?'Aprovado · Pré-cadastrado':r.status==='entrada_realizada'?'Entrada confirmada':'Recusado';
+    badge='<span class="tag farol-tag status-'+tone+'"><span class="farol-dot" aria-hidden="true"></span>'+statusText+'</span>';
     let footer='';
     if(r.status==='programado' && current){
       footer='<div class="preentrada-actions">'+
@@ -83,7 +83,7 @@ function render(day=datePicker()){
       footer='<div class="preentrada-info"><strong>Recusa:</strong> '+esc(labels[r.motivo_recusa]||'Outro')+
         (r.justificativa_outro?' · '+esc(r.justificativa_outro):'')+'</div>';
     }
-    return '<article class="preentrada-card">'+
+    return '<article class="preentrada-card farol-card farol-'+tone+'">'+
       '<div class="preentrada-card-head"><strong>'+esc(r.pet_nome)+'</strong>'+badge+'</div>'+
       '<div class="preentrada-detail"><b>Tutor:</b> '+esc(r.tutor_nome)+'</div>'+
       '<div class="preentrada-detail"><b>Porte:</b> '+esc(porteLabels[r.porte]||r.porte)+' · <b>Serviço:</b> '+esc(serviceName(r.servico_id))+'</div>'+

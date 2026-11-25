@@ -140,7 +140,7 @@ function printSchedule(){
     +'<table class="booking-print-table"><thead><tr><th>#</th><th>Pet / Tutor</th>'
     +'<th>Porte</th><th>Serviço</th><th>Endereço</th><th>Situação</th></tr></thead>'
     +'<tbody>'+(rows||'<tr><td colspan="6">Nenhum agendamento aprovado nesta data.</td></tr>')+'</tbody></table>'
-    +'<footer class="booking-print-footer">Versão 1.8.0 · Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA · Relatório de programação · Impresso em '
+    +'<footer class="booking-print-footer">Versão 1.9.0 · Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA · Relatório de programação · Impresso em '
     +esc(new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Sao_Paulo'}).format(new Date()))
     +'</footer>';
   sheet.hidden=false;

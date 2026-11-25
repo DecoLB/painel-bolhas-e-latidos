@@ -21,6 +21,20 @@ MVP web para controle operacional de banho e tosa: entrada, fila de espera, exec
 - Telão: cartões horizontais compactos, foto íntegra à esquerda, informação em negrito e maior densidade por coluna, também na tela cheia.
 - Hovers, transições discretas, estados de foco e suporte a movimento reduzido. Sem alteração de schema ou políticas RLS.
 
+## V1.9.0 — Faróis de situação e estados acessíveis
+
+- Aguardando / pendente / fila de espera → **amarelo**, situação que requer acompanhamento.
+- Em execução / aprovado / programado / conexão ativa → **verde**, operação ativa ou confirmação.
+- Recusado / cancelado / falha de conexão → **vermelho**, exceção operacional.
+- Concluído / desativado / sem dados / sem avaliação → **cinza**, estado encerrado ou neutro.
+- Etiquetas sempre contêm um texto e um ponto indicador, evitando comunicação por cor isolada.
+- Na visão Administrador, métricas recebem faróis coerentes com seu significado, sem metas nem limiares inventados; indicadores zerados permanecem neutros.
+- Relatório diário recebe badges com o estado por atendimento.
+- Prestador e Telão têm borda lateral, tag textual e contadores com farol; o layout horizontal e a foto completa permanecem.
+- Agenda e entrada pré-cadastrada sinalizam pendente, aprovado/programado e recusado; calendário utiliza as mesmas quatro cores.
+- Conectividade informa conexão (verde), reconexão (amarelo) e falha (vermelho).
+- Visual centralizado na folha `farol-v19.css`; sem modificação do banco, da autorização por perfil ou das regras de atendimento e agendamento.
+
 ## Tecnologias
 - HTML, CSS e JavaScript sem build.
 - Supabase Auth, Postgres, Realtime e Storage.

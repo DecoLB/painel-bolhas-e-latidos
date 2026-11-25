@@ -20,6 +20,8 @@ const hourOf = value => value ? timeFmt.format(new Date(value)) : '—';
 const minutesBetween = (first,last) => first && last ? Math.max(0,Math.round((new Date(last)-new Date(first))/60000)) : null;
 const duration = value => value == null ? '—' : value >= 60 ? Math.floor(value/60)+'h '+String(value%60).padStart(2,'0')+'m' : value+' min';
 const boolText = value => value ? 'Sim' : 'Não';
+const statusBadge = (tone,label) => '<span class="tag farol-tag status-'+tone+'"><span class="farol-dot" aria-hidden="true"></span>'+esc(label)+'</span>';
+const setFarol = (id,tone) => { const node=byId(id)?.closest('.stat-card, .insight-mini'); if(node)node.dataset.farol=tone; };
 
 const state = { services:[], professionals:[], attendances:[], images:new Map(), channel:null, busy:false, photo:null, stream:null, page:'admin', role:null };
 const serviceName = id => state.services.find(s => s.id === id)?.nome || 'Serviço indisponível';
@@ -40,8 +42,10 @@ function setLoading(value) {
 }
 function setConnection(status) {
   const pill = byId('connectionPill');
-  pill.textContent = status === 'ok' ? '● Conectado' : '● Reconectando';
-  pill.className = 'connection-pill '+(status === 'ok' ? 'ok' : 'off');
+  const tone=status==='ok'?'success':status==='error'?'danger':'warning';
+  pill.textContent=status==='ok'?'Conectado':status==='error'?'Falha na conexão':'Reconectando';
+  pill.className='connection-pill connection-'+tone;
+  pill.setAttribute('role','status');
 }
 function switchPage(page) {
   if (page === 'admin' && state.role !== 'admin') return;
@@ -150,10 +154,10 @@ function renderOptions() {
 }
 function renderAdminLists() {
   byId('servicesList').innerHTML = state.services.map(s=>
-    '<div class="entity-row"><div class="entity-name">'+esc(s.nome)+'</div><span class="tag '+(s.ativo?'':'off')+'">'+(s.ativo?'Ativo':'Inativo')+'</span><button type="button" class="btn btn-outline" data-toggle-service="'+esc(s.id)+'">'+(s.ativo?'Desativar':'Ativar')+'</button></div>'
+    '<div class="entity-row"><div class="entity-name">'+esc(s.nome)+'</div>'+statusBadge(s.ativo?'success':'neutral',s.ativo?'Ativo':'Inativo')+'<button type="button" class="btn btn-outline" data-toggle-service="'+esc(s.id)+'">'+(s.ativo?'Desativar':'Ativar')+'</button></div>'
   ).join('') || '<div class="empty">Nenhum serviço cadastrado</div>';
   byId('professionalsList').innerHTML = state.professionals.map(p=>
-    '<div class="entity-row"><span class="entity-code">'+esc(p.sigla)+'</span><div class="entity-name">'+esc(p.nome)+'</div><span class="tag '+(p.ativo?'':'off')+'">'+(p.ativo?'Ativo':'Inativo')+'</span><button type="button" class="btn btn-outline" data-toggle-professional="'+esc(p.id)+'">'+(p.ativo?'Desativar':'Ativar')+'</button></div>'
+    '<div class="entity-row"><span class="entity-code">'+esc(p.sigla)+'</span><div class="entity-name">'+esc(p.nome)+'</div>'+statusBadge(p.ativo?'success':'neutral',p.ativo?'Ativo':'Inativo')+'<button type="button" class="btn btn-outline" data-toggle-professional="'+esc(p.id)+'">'+(p.ativo?'Desativar':'Ativar')+'</button></div>'
   ).join('') || '<div class="empty">Nenhum profissional cadastrado</div>';
 }
 function renderChart(nodeId, items) {
@@ -175,6 +179,10 @@ function renderReport() {
   byId('statWaiting').textContent=waiting;
   byId('statActive').textContent=active;
   byId('statDuration').textContent=times.length ? duration(Math.round(times.reduce((a,b)=>a+b,0)/times.length)) : '—';
+  setFarol('statCompleted','neutral');
+  setFarol('statWaiting',waiting>0?'warning':'neutral');
+  setFarol('statActive',active>0?'success':'neutral');
+  setFarol('statDuration','neutral');
   renderInsights(date,done);
   const byStaff=new Map(),byService=new Map();
   for (const r of done) {
@@ -185,7 +193,7 @@ function renderReport() {
   renderChart('professionalsChart',[...byStaff].map(([name,count])=>({name,count})));
   renderChart('servicesChart',[...byService].map(([name,count])=>({name,count})));
   byId('reportTable').innerHTML = dailyRecords.map(r=>
-    '<tr><td>'+esc(r.animal_nome)+'</td><td>'+esc(serviceName(r.servico_id))+'</td><td>'+esc(professionalName(r.profissional_id))+'</td><td>'+hourOf(r.criado_em)+'</td><td>'+hourOf(r.iniciado_em)+'</td><td>'+hourOf(r.concluido_em)+'</td><td>'+duration(minutesBetween(r.criado_em,r.iniciado_em))+'</td><td>'+duration(minutesBetween(r.iniciado_em,r.concluido_em))+'</td><td>'+esc(r.status==='concluido'?'Concluído':r.status==='em_execucao'?'Em execução':'Aguardando')+'</td></tr>'
+    '<tr><td>'+esc(r.animal_nome)+'</td><td>'+esc(serviceName(r.servico_id))+'</td><td>'+esc(professionalName(r.profissional_id))+'</td><td>'+hourOf(r.criado_em)+'</td><td>'+hourOf(r.iniciado_em)+'</td><td>'+hourOf(r.concluido_em)+'</td><td>'+duration(minutesBetween(r.criado_em,r.iniciado_em))+'</td><td>'+duration(minutesBetween(r.iniciado_em,r.concluido_em))+'</td><td>'+statusBadge(r.status==='concluido'?'neutral':r.status==='em_execucao'?'success':'warning',r.status==='concluido'?'Concluído':r.status==='em_execucao'?'Em execução':'Aguardando')+'</td></tr>'
   ).join('') || '<tr><td colspan="9">Nenhum atendimento registrado na data selecionada.</td></tr>';
 }
 
@@ -201,6 +209,10 @@ function renderInsights(date, done) {
     ? duration(Math.round(waitTimes.reduce((sum,value)=>sum+value,0)/waitTimes.length)):'—';
   byId('insightStaff').textContent=String(professionals.size);
   byId('insightAppointments').textContent=String(approvedArrivals.length);
+  setFarol('insightEntries','neutral');
+  setFarol('insightWait','neutral');
+  setFarol('insightStaff',professionals.size>0?'success':'neutral');
+  setFarol('insightAppointments',approvedArrivals.length>0?'success':'neutral');
 
   const anchor=new Date(date+'T12:00:00Z');
   const dates=Array.from({length:7},(_,i)=>{
@@ -248,7 +260,7 @@ function photoMarkup(r,cls='pet-photo') {
     : '✦')+'</div>';
 }
 function scheduleLabel(r) {
-  return r.agendado ? '<span class="tag warn">Agendado'+(r.horario_agendado ? ' · '+esc(r.horario_agendado.slice(0,5)) : '')+'</span>' : '<span class="tag">Ordem de entrada</span>';
+  return r.agendado ? statusBadge('warning','Aguardando · Agendado'+(r.horario_agendado ? ' '+r.horario_agendado.slice(0,5) : '')) : statusBadge('warning','Aguardando');
 }
 
 function professionalPicker(r,professionals) {
@@ -291,14 +303,14 @@ function renderQueues() {
   byId('waitingCount').textContent=waiting.length;byId('activeCount').textContent=active.length;
   const professionals=state.professionals.filter(p=>p.ativo);
   byId('waitingList').innerHTML=waiting.map(r=>
-    '<article class="pet-card">'+photoMarkup(r)+'<div class="pet-info"><div class="pet-head"><strong>'+esc(r.animal_nome)+'</strong>'+scheduleLabel(r)+'</div><div class="pet-meta">'+esc(serviceName(r.servico_id))+' · Entrada '+hourOf(r.criado_em)+'</div>'+
+    '<article class="pet-card farol-card farol-warning">'+photoMarkup(r)+'<div class="pet-info"><div class="pet-head"><strong>'+esc(r.animal_nome)+'</strong>'+scheduleLabel(r)+'</div><div class="pet-meta">'+esc(serviceName(r.servico_id))+' · Entrada '+hourOf(r.criado_em)+'</div>'+
     (r.tutor ? '<div class="pet-detail">Tutor: '+esc(r.tutor)+'</div>' : '')+
     (r.observacao ? '<div class="pet-detail">Obs.: '+esc(r.observacao)+'</div>' : '')+
     '<div class="pet-actions">'+professionalPicker(r,professionals)+
     '<button type="button" class="btn btn-primary" data-assume="'+esc(r.id)+'">Iniciar</button></div></div></article>'
   ).join('') || '<div class="empty">Nenhum animal aguardando atendimento.</div>';
   byId('activeList').innerHTML=active.map(r=>
-    '<article class="pet-card">'+photoMarkup(r)+'<div class="pet-info"><div class="pet-head"><strong>'+esc(r.animal_nome)+'</strong><span class="tag active">Em execução</span></div><div class="pet-meta">'+esc(serviceName(r.servico_id))+'</div><div class="pet-detail">Profissional: <strong>'+esc(professionalName(r.profissional_id))+'</strong></div><div class="pet-detail">Início: '+hourOf(r.iniciado_em)+'</div><div class="pet-actions"><button type="button" class="btn btn-primary" data-finish="'+esc(r.id)+'">Finalizar atendimento</button></div></div></article>'
+    '<article class="pet-card farol-card farol-success">'+photoMarkup(r)+'<div class="pet-info"><div class="pet-head"><strong>'+esc(r.animal_nome)+'</strong>'+statusBadge('success','Em execução')+'</div><div class="pet-meta">'+esc(serviceName(r.servico_id))+'</div><div class="pet-detail">Profissional: <strong>'+esc(professionalName(r.profissional_id))+'</strong></div><div class="pet-detail">Início: '+hourOf(r.iniciado_em)+'</div><div class="pet-actions"><button type="button" class="btn btn-primary" data-finish="'+esc(r.id)+'">Finalizar atendimento</button></div></div></article>'
   ).join('') || '<div class="empty">Nenhum atendimento em execução.</div>';
 }
 function renderTV() {
@@ -307,15 +319,16 @@ function renderTV() {
   byId('tvWaitingCount').textContent=waiting.length;byId('tvActiveCount').textContent=active.length;
   const count=Math.max(waiting.length,active.length);
   byId('tvGrid').dataset.density=count<=1?'single':count<=4?'few':'many';
-  const item = (r,running)=>'<article class="tv-card '+(running?'tv-running':'tv-waiting')+'">'
+  const item = (r,running)=>'<article class="tv-card farol-card '+(running?'tv-running farol-success':'tv-waiting farol-warning')+'">'
     +photoMarkup(r,'tv-photo')
     +'<div class="tv-card-body"><strong class="tv-pet-name">'+esc(r.animal_nome)+'</strong>'
     +'<div class="tv-data-line"><span>Serviço</span><strong>'+esc(serviceName(r.servico_id))+'</strong></div>'
     +(running
       ? '<div class="tv-data-line"><span>Responsável</span><strong>'+esc(professionalName(r.profissional_id))+'</strong></div>'
-        +'<span class="tag active tv-status">Em atendimento</span>'
+        +'<span class="tv-status">'+statusBadge('success','Em atendimento')+'</span>'
       : '<div class="tv-data-line"><span>Entrada</span><strong>'+hourOf(r.criado_em)+'</strong></div>'
-        +(r.agendado?'<span class="tag warn tv-status">Agendado'+(r.horario_agendado?' · '+esc(r.horario_agendado.slice(0,5)):'')+'</span>':'')
+        +'<span class="tv-status">'+statusBadge('warning','Aguardando')+'</span>'
+        +(r.agendado?'<span class="tv-booked-label">Agendado'+(r.horario_agendado?' · '+esc(r.horario_agendado.slice(0,5)):'')+'</span>':'')
     )+'</div></article>';
   byId('tvWaiting').innerHTML=waiting.map(r=>item(r,false)).join('') || '<div class="empty">Nenhum animal aguardando.</div>';
   byId('tvActive').innerHTML=active.map(r=>item(r,true)).join('') || '<div class="empty">Nenhum atendimento em execução.</div>';

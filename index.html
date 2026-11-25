@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="./programacao-entrada.css">
   <link rel="stylesheet" href="./visual-v2.css?v=2">
   <link rel="stylesheet" href="./visual-v3.css?v=180">
+  <link rel="stylesheet" href="./farol-v19.css?v=190">
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -37,7 +38,7 @@
       <p id="setupInfo" class="setup-info" hidden>O banco ainda não foi conectado. Configure o projeto Supabase em config.js para habilitar o acesso.</p>
       
     </form>
-    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 1.8.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 1.9.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
   </section>
   <div id="appShell" class="shell" hidden>
     <header class="topbar">
@@ -78,6 +79,12 @@
             <article class="stat-card"><span class="stat-label">Tempo médio de execução</span><strong id="statDuration">—</strong><small>Dos concluídos no dia</small></article>
           </div>
 
+          <div class="farol-legend no-print" aria-label="Legenda dos estados">
+            <span><i class="farol-dot success" aria-hidden="true"></i><strong>Verde</strong> Em execução / aprovado</span>
+            <span><i class="farol-dot warning" aria-hidden="true"></i><strong>Amarelo</strong> Aguardando / pendente</span>
+            <span><i class="farol-dot danger" aria-hidden="true"></i><strong>Vermelho</strong> Recusado / falha</span>
+            <span><i class="farol-dot neutral" aria-hidden="true"></i><strong>Cinza</strong> Concluído / sem informação</span>
+          </div>
           <section class="insights-section" aria-labelledby="insightsTitle">
             <div class="insights-heading"><div><span class="eyebrow">INTELIGÊNCIA OPERACIONAL</span><h2 id="insightsTitle">Insights de organização e gestão</h2></div><p>Indicadores calculados a partir dos registros disponíveis; acompanham a data selecionada.</p></div>
             <div class="insights-stats">
@@ -132,7 +139,7 @@
               <input type="date" id="printBookingDate" aria-label="Data da programação para impressão">
               <button type="button" class="btn btn-primary" id="printBookingSchedule">Imprimir programação do dia</button>
             </div>
-            <div class="booking-legend"><span><i class="legend-dot pending"></i> Pendente de análise</span><span><i class="legend-dot approved"></i> Aprovado e programado</span></div>
+            <div class="booking-legend"><span><i class="legend-dot pending"></i> Pendente de análise</span><span><i class="legend-dot approved"></i> Aprovado e programado</span><span><i class="legend-dot rejected"></i> Recusado na entrada</span></div>
             <div class="appointment-calendar" id="bookingCalendar" aria-label="Calendário de solicitações dos próximos 30 dias"></div>
           </section>
           <div class="split appointment-lists">
@@ -180,23 +187,23 @@
       <section id="page-prestador" class="page" hidden>
         <div class="page-heading"><div><span class="eyebrow">OPERAÇÃO</span><h1>Painel do prestador</h1><p>Assuma um atendimento e finalize quando o serviço terminar.</p></div><span class="live-indicator"><i></i> Atualização em tempo real</span></div>
         <div class="queue-grid">
-          <section class="panel queue-panel"><div class="queue-title"><h2>Fila de espera <span id="waitingCount">0</span></h2><p>Por ordem de cadastro</p></div><div id="waitingList" class="queue-list"></div></section>
-          <section class="panel queue-panel"><div class="queue-title"><h2>Em execução <span id="activeCount">0</span></h2><p>Atendimentos em andamento</p></div><div id="activeList" class="queue-list"></div></section>
+          <section class="panel queue-panel queue-warning"><div class="queue-title"><h2>Fila de espera <span id="waitingCount">0</span></h2><p>Por ordem de cadastro</p></div><div id="waitingList" class="queue-list"></div></section>
+          <section class="panel queue-panel queue-success"><div class="queue-title"><h2>Em execução <span id="activeCount">0</span></h2><p>Atendimentos em andamento</p></div><div id="activeList" class="queue-list"></div></section>
         </div>
       </section>
       <section id="page-telao" class="page telao-page" hidden>
         <div class="page-heading no-print"><div><span class="eyebrow">PAINEL OPERACIONAL</span><h1>Visão do telão</h1><p>Exibição contínua das filas de atendimento.</p></div><button id="fullscreenBtn" type="button" class="btn btn-outline">Tela cheia</button></div>
         <div class="tv-header"><div class="brand"><img class="brand-logo" src="./assets/logo.webp" alt="Logo Bolhas & Latidos" onerror="this.hidden=true"><span class="brand-fallback">Bolhas <em>&</em> Latidos</span></div><div class="tv-now" id="tvClock"></div></div>
-        <div class="tv-grid" id="tvGrid" data-density="single"><div class="tv-column"><h2>Aguardando <span id="tvWaitingCount">0</span></h2><div id="tvWaiting" class="tv-list"></div></div><div class="tv-column"><h2>Em execução <span id="tvActiveCount">0</span></h2><div id="tvActive" class="tv-list"></div></div></div>
-        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 1.8.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+        <div class="tv-grid" id="tvGrid" data-density="single"><div class="tv-column farol-warning"><h2>Aguardando <span id="tvWaitingCount">0</span></h2><div id="tvWaiting" class="tv-list"></div></div><div class="tv-column farol-success"><h2>Em execução <span id="tvActiveCount">0</span></h2><div id="tvActive" class="tv-list"></div></div></div>
+        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 1.9.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
       </section>
     </main>
-    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 1.8.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
+    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 1.9.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
   </div>
   <section id="bookingPrintSheet" hidden aria-label="Ficha de programação para impressão"></section>
   <script src="./config.js?v=20261125-2"></script>
-  <script type="module" src="./app.js"></script>
-  <script type="module" src="./agendamento-admin.js"></script>
-  <script type="module" src="./programacao-entrada.js"></script>
+  <script type="module" src="./app.js?v=190"></script>
+  <script type="module" src="./agendamento-admin.js?v=190"></script>
+  <script type="module" src="./programacao-entrada.js?v=190"></script>
 </body>
 </html>
