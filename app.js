@@ -412,3 +412,6 @@ async function start() {
   });
 }
 start().catch(err=>notify('Erro ao iniciar o painel: '+err.message,'error'));
+
+// Compartilhamento interno do cliente autenticado com o calendário administrativo.
+export {supabase, state, notify, esc, today};
