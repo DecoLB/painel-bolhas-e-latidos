@@ -21,7 +21,7 @@ const minutesBetween = (first,last) => first && last ? Math.max(0,Math.round((ne
 const duration = value => value == null ? '—' : value >= 60 ? Math.floor(value/60)+'h '+String(value%60).padStart(2,'0')+'m' : value+' min';
 const boolText = value => value ? 'Sim' : 'Não';
 
-const state = { services:[], professionals:[], attendances:[], images:new Map(), channel:null, busy:false, photo:null, stream:null, page:'admin' };
+const state = { services:[], professionals:[], attendances:[], images:new Map(), channel:null, busy:false, photo:null, stream:null, page:'admin', role:null };
 const serviceName = id => state.services.find(s => s.id === id)?.nome || 'Serviço indisponível';
 const professionalName = id => state.professionals.find(p => p.id === id)?.nome || '—';
 
@@ -44,6 +44,7 @@ function setConnection(status) {
   pill.className = 'connection-pill '+(status === 'ok' ? 'ok' : 'off');
 }
 function switchPage(page) {
+  if (page === 'admin' && state.role !== 'admin') return;
   state.page = page;
   for (const el of document.querySelectorAll('.page')) {
     const active = el.id === 'page-'+page;
@@ -54,39 +55,49 @@ function switchPage(page) {
   if (page === 'telao') renderTV();
 }
 function switchAdminTab(tab) {
+  if(state.role !== 'admin') return;
   for(const el of document.querySelectorAll('.admin-panel')) el.hidden = el.id !== 'admin-'+tab;
   for(const button of document.querySelectorAll('[data-admin-tab]')) button.classList.toggle('active',button.dataset.adminTab===tab);
 }
-async function adminAuthorized() {
-  const { data:{user},error } = await supabase.auth.getUser();
-  if (error || !user) return false;
-  const { data, error: readError } = await supabase.from('app_admins').select('user_id').eq('user_id',user.id).maybeSingle();
-  if (readError) throw readError;
-  return Boolean(data);
+async function getUserRole() {
+  const {data:{user},error} = await supabase.auth.getUser();
+  if(error || !user) return null;
+  const [admin,operator] = await Promise.all([
+    supabase.from('app_admins').select('user_id').eq('user_id',user.id).maybeSingle(),
+    supabase.from('app_operadores').select('user_id').eq('user_id',user.id).maybeSingle()
+  ]);
+  if(admin.error) throw admin.error;
+  if(operator.error) throw operator.error;
+  return admin.data ? 'admin' : operator.data ? 'operacional' : null;
 }
 async function showApp() {
   try {
-    if (!await adminAuthorized()) {
+    const role = await getUserRole();
+    if(!role) {
       await supabase.auth.signOut();
-      notify('Usuário sem autorização de administrador. Solicite liberação ao responsável.','error');
+      notify('Conta sem perfil autorizado. Solicite liberação ao administrador.','error');
       showLogin();
       return;
     }
+    state.role = role;
+    byId('adminNav').hidden = role !== 'admin';
+    byId('rolePill').textContent = role === 'admin' ? 'Administrador' : 'Operacional';
     byId('loginScreen').hidden = true;
     byId('appShell').hidden = false;
     byId('reportDate').value = today();
     byId('adminToday').textContent = dateFmt.format(new Date());
-    switchPage('admin');
+    switchPage(role === 'admin' ? 'admin' : 'entrada');
     await refresh();
     subscribe();
   } catch(err) {
-    notify('Não foi possível validar o administrador: '+err.message,'error');
+    notify('Não foi possível validar o perfil: '+err.message,'error');
     showLogin();
   }
 }
 function showLogin() {
   if(state.channel && supabase) { supabase.removeChannel(state.channel); state.channel=null; }
   stopCamera();
+  state.role=null;
   byId('appShell').hidden=true;
   byId('loginScreen').hidden=false;
 }
@@ -126,8 +137,7 @@ function subscribe() {
 }
 function renderAll() {
   renderOptions();
-  renderAdminLists();
-  renderReport();
+  if(state.role === 'admin') {renderAdminLists(); renderReport();}
   renderQueues();
   renderTV();
 }
