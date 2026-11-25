@@ -102,6 +102,11 @@
                 <button type="button" class="btn btn-primary" id="copyBookingLink">Copiar link para o tutor</button>
               </div>
             </div>
+            <div class="schedule-print-toolbar">
+              <label for="printBookingDate">Ficha da programação:</label>
+              <input type="date" id="printBookingDate" aria-label="Data da programação para impressão">
+              <button type="button" class="btn btn-primary" id="printBookingSchedule">Imprimir programação do dia</button>
+            </div>
             <div class="booking-legend"><span><i class="legend-dot pending"></i> Pendente de análise</span><span><i class="legend-dot approved"></i> Aprovado e programado</span></div>
             <div class="appointment-calendar" id="bookingCalendar" aria-label="Calendário de solicitações dos próximos 30 dias"></div>
           </section>
@@ -119,6 +124,18 @@
       </section>
       <section id="page-entrada" class="page" hidden>
         <div class="page-heading"><div><span class="eyebrow">RECEPÇÃO</span><h1>Entrada de animal</h1><p>Registre o serviço para colocar o animal na fila de espera.</p></div></div>
+        <section class="panel preentrada-panel" id="preentradaPanel">
+          <div class="preentrada-header">
+            <div><span class="eyebrow">AGENDAMENTOS APROVADOS</span><h2>Programação e entradas pré-cadastradas</h2>
+              <p>Consulte datas futuras; a entrada ou a recusa só poderá ser registrada na data agendada.</p></div>
+            <div class="preentrada-filter">
+              <label for="programacaoEntradaData">Data da programação</label>
+              <input type="date" id="programacaoEntradaData">
+            </div>
+          </div>
+          <div id="preentradaNotice" class="preentrada-notice" role="status"></div>
+          <div id="programacaoEntradaList" class="preentrada-grid"><div class="empty">Carregando programação...</div></div>
+        </section>
         <div class="entry-layout">
           <form id="entryForm" class="panel entry-form">
             <div class="two-col">
@@ -150,8 +167,10 @@
     </main>
     <footer class="footer">Bolhas & Latidos · Gestão operacional <span id="lastUpdated">Aguardando sincronização</span></footer>
   </div>
+  <section id="bookingPrintSheet" hidden aria-label="Ficha de programação para impressão"></section>
   <script src="./config.js?v=20261125-2"></script>
   <script type="module" src="./app.js"></script>
   <script type="module" src="./agendamento-admin.js"></script>
+  <script type="module" src="./programacao-entrada.js"></script>
 </body>
 </html>
