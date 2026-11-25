@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ae4b02">
+  <meta name="description" content="Solicite um agendamento no Bolhas & Latidos. Sujeito à análise da equipe.">
+  <title>Solicitar agendamento | Bolhas & Latidos</title>
+  <link rel="icon" href="./assets/Logo.jpeg" type="image/jpeg">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./agendamento.css">
+</head>
+<body class="agendamento-publico">
+  <header class="public-topbar">
+    <div class="brand">
+      <img class="brand-logo" src="./assets/Logo.jpeg" alt="Logo Bolhas & Latidos" onerror="this.hidden=true">
+      <span class="brand-fallback">Bolhas <em>&</em> Latidos</span>
+    </div>
+    <span class="public-tag">Solicitação online</span>
+  </header>
+  <main class="public-main">
+    <div class="public-intro">
+      <span class="eyebrow">BOLHAS & LATIDOS</span>
+      <h1>Solicite um agendamento</h1>
+      <p>Escolha o serviço e a data desejada. Nossa equipe analisará seu pedido antes de confirmar a programação.</p>
+    </div>
+    <div id="publicError" class="public-alert" role="alert" hidden></div>
+    <section class="panel public-card" id="requestCard">
+      <form id="bookingForm">
+        <div class="public-section-title"><span>1</span><h2>Dados do tutor e do pet</h2></div>
+        <div class="two-col">
+          <div class="field"><label for="tutorNome">Nome do tutor <b>*</b></label><input id="tutorNome" maxlength="120" minlength="2" autocomplete="name" placeholder="Nome completo" required></div>
+          <div class="field"><label for="petNome">Nome do pet <b>*</b></label><input id="petNome" maxlength="120" minlength="2" placeholder="Nome do animal" required></div>
+          <div class="field"><label for="portePet">Porte <b>*</b></label><select id="portePet" required><option value="">Selecione o porte</option><option value="pequeno">Pequeno</option><option value="medio">Médio</option><option value="grande">Grande</option></select></div>
+          <div class="field"><label for="servicoPet">Serviço a realizar <b>*</b></label><select id="servicoPet" required><option value="">Carregando serviços...</option></select></div>
+        </div>
+        <div class="public-section-title"><span>2</span><h2>Data desejada</h2></div>
+        <p class="public-help">Selecione uma data entre amanhã e os próximos 30 dias. Não é possível solicitar para hoje.</p>
+        <div id="calendarRange" class="calendar-range" role="group" aria-label="Datas disponíveis para solicitação"></div>
+        <input type="hidden" id="desiredDate" required>
+        <p class="selected-day" id="selectedDay">Nenhuma data selecionada.</p>
+        <div class="public-section-title"><span>3</span><h2>Endereço do tutor</h2></div>
+        <div class="two-col">
+          <div class="field"><label for="cep">CEP <b>*</b></label><input id="cep" autocomplete="postal-code" inputmode="numeric" maxlength="9" pattern="[0-9]{5}-?[0-9]{3}" placeholder="00000-000" required><small id="cepMessage" class="public-help" aria-live="polite">Ao digitar 8 números, buscaremos o endereço.</small></div>
+          <div class="field"><label for="rua">Rua / Logradouro <b>*</b></label><input id="rua" maxlength="180" autocomplete="address-line1" placeholder="Rua" required></div>
+          <div class="field"><label for="numero">Número <b>*</b></label><input id="numero" maxlength="20" placeholder="Número ou S/N" required></div>
+          <div class="field"><label for="complemento">Complemento <span>(opcional)</span></label><input id="complemento" maxlength="180" autocomplete="address-line2" placeholder="Apto, bloco, referência"></div>
+          <div class="field"><label for="bairro">Bairro</label><input id="bairro" maxlength="120" placeholder="Bairro"></div>
+          <div class="field"><label for="cidade">Cidade <b>*</b></label><input id="cidade" maxlength="120" autocomplete="address-level2" placeholder="Cidade" required></div>
+          <div class="field"><label for="uf">UF <b>*</b></label><input id="uf" maxlength="2" pattern="[A-Za-z]{2}" autocomplete="address-level1" placeholder="SP" required></div>
+        </div>
+        <div class="honeypot" aria-hidden="true"><label for="website">Deixe este campo vazio</label><input id="website" name="website" autocomplete="off" tabindex="-1"></div>
+        <div class="public-disclaimer">Esta é uma <strong>solicitação</strong>, não uma confirmação. Seus dados serão utilizados para avaliação e organização do atendimento.</div>
+        <button class="btn btn-primary btn-wide" id="sendBooking" type="submit">Enviar solicitação de agendamento</button>
+      </form>
+    </section>
+    <section class="panel public-success" id="bookingSuccess" hidden role="status">
+      <div class="success-mark">✓</div>
+      <h2>Solicitação enviada!</h2>
+      <p>Sua solicitação de agendamento foi enviada e será analisada e respondida por um colaborador do Bolhas & Latidos.</p>
+      <p class="public-help">A data selecionada ainda não está confirmada.</p>
+      <button type="button" class="btn btn-outline" id="newBooking">Solicitar outro agendamento</button>
+    </section>
+    <footer class="public-footer">Bolhas & Latidos · Banho & Tosa · Veterinário</footer>
+  </main>
+  <script src="./config.js?v=20261125-2"></script>
+  <script type="module" src="./agendamento.js"></script>
+</body>
+</html>
