@@ -2,6 +2,16 @@
 
 MVP web para controle operacional de banho e tosa: entrada, fila de espera, execução, telão, administração e indicadores, sem informações financeiras.
 
+## Estado de implantação (25/11/2026)
+- Supabase Bolhas e Latidos conectado: projeto `owvbaruywsmiiduqlrbj`.
+- Migração inicial aplicada: tabelas, catálogo, RLS, Storage e RPCs.
+- Primeiro administrador autorizado em `app_admins`.
+- `config.js` configurado com URL e chave **publicável** do projeto.
+- GitHub Pages deve utilizar **GitHub Actions**; workflow próprio em `.github/workflows/pages.yml`.
+- **Pendente:** adicionar `assets/Logo.jpeg` enviado pelo cliente; arquivo ainda não existe no GitHub.
+- **Pendente:** concluir e testar agendamento seguro da limpeza automática e validar funcionamento ponta a ponta.
+- **Pendente:** confirmar conclusão da primeira implantação do Pages em Actions.
+
 ## Tecnologias
 - HTML, CSS e JavaScript sem build.
 - Supabase Auth, Postgres, Realtime e Storage.
