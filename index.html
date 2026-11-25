@@ -3,13 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#145b70">
+  <meta name="theme-color" content="#FF8202">
   <meta name="description" content="Bolhas & Latidos — Painel de gestão operacional">
   <title>Bolhas & Latidos | Painel Operacional</title>
-  <link rel="icon" href="./assets/Logo.jpeg" type="image/jpeg">
+  <link rel="icon" href="./assets/logo.webp" type="image/webp">
   <link rel="stylesheet" href="./styles.css">
   <link rel="stylesheet" href="./agendamento-admin.css">
   <link rel="stylesheet" href="./programacao-entrada.css">
+  <link rel="stylesheet" href="./visual-v2.css?v=2">
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -17,7 +18,7 @@
     <div class="login-visual">
       <div class="login-decoration" aria-hidden="true"></div>
       <div class="brand brand-light">
-        <img class="brand-logo" src="./assets/Logo.jpeg" alt="Logo Bolhas & Latidos" onerror="this.hidden=true">
+        <img class="brand-logo" src="./assets/logo.webp" alt="Logo Bolhas & Latidos" onerror="this.hidden=true">
         <span class="brand-fallback">Bolhas <em>&</em> Latidos</span>
       </div>
       <h1>Cuidado em cada atendimento.<br>Controle em cada etapa.</h1>
@@ -28,18 +29,18 @@
       <h2>Bem-vindo de volta</h2>
       <p class="muted">Entre com seu acesso autorizado ao painel.</p>
       <label for="email">E-mail</label>
-      <input id="email" name="email" type="email" autocomplete="username" required placeholder="administrador@exemplo.com">
+      <input id="email" name="email" type="email" autocomplete="username" required placeholder="seuemail@exemplo.com">
       <label for="password">Senha</label>
       <input id="password" name="password" type="password" autocomplete="current-password" required minlength="6" placeholder="Sua senha">
       <button id="loginBtn" class="btn btn-primary btn-wide" type="submit">Entrar no painel <span>→</span></button>
       <p id="setupInfo" class="setup-info" hidden>O banco ainda não foi conectado. Configure o projeto Supabase em config.js para habilitar o acesso.</p>
-      <p class="micro">Dois perfis: Administrador e Operacional</p>
+      
     </form>
   </section>
   <div id="appShell" class="shell" hidden>
     <header class="topbar">
       <div class="brand">
-        <img class="brand-logo" src="./assets/Logo.jpeg" alt="Logo Bolhas & Latidos" onerror="this.hidden=true">
+        <img class="brand-logo" src="./assets/logo.webp" alt="Logo Bolhas & Latidos" onerror="this.hidden=true">
         <span class="brand-fallback">Bolhas <em>&</em> Latidos</span>
       </div>
       <div class="header-meta">
@@ -162,8 +163,8 @@
       </section>
       <section id="page-telao" class="page telao-page" hidden>
         <div class="page-heading no-print"><div><span class="eyebrow">PAINEL OPERACIONAL</span><h1>Visão do telão</h1><p>Exibição contínua das filas de atendimento.</p></div><button id="fullscreenBtn" type="button" class="btn btn-outline">Tela cheia</button></div>
-        <div class="tv-header"><div class="brand"><img class="brand-logo" src="./assets/Logo.jpeg" alt="Logo Bolhas & Latidos" onerror="this.hidden=true"><span class="brand-fallback">Bolhas <em>&</em> Latidos</span></div><div class="tv-now" id="tvClock"></div></div>
-        <div class="tv-grid"><div class="tv-column"><h2>Aguardando <span id="tvWaitingCount">0</span></h2><div id="tvWaiting" class="tv-list"></div></div><div class="tv-column"><h2>Em execução <span id="tvActiveCount">0</span></h2><div id="tvActive" class="tv-list"></div></div></div>
+        <div class="tv-header"><div class="brand"><img class="brand-logo" src="./assets/logo.webp" alt="Logo Bolhas & Latidos" onerror="this.hidden=true"><span class="brand-fallback">Bolhas <em>&</em> Latidos</span></div><div class="tv-now" id="tvClock"></div></div>
+        <div class="tv-grid" id="tvGrid" data-density="single"><div class="tv-column"><h2>Aguardando <span id="tvWaitingCount">0</span></h2><div id="tvWaiting" class="tv-list"></div></div><div class="tv-column"><h2>Em execução <span id="tvActiveCount">0</span></h2><div id="tvActive" class="tv-list"></div></div></div>
       </section>
     </main>
     <footer class="footer">Bolhas & Latidos · Gestão operacional <span id="lastUpdated">Aguardando sincronização</span></footer>

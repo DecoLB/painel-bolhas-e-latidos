@@ -217,6 +217,8 @@ function renderTV() {
   const waiting=state.attendances.filter(r=>r.status==='aguardando').sort((a,b)=>new Date(a.criado_em)-new Date(b.criado_em));
   const active=state.attendances.filter(r=>r.status==='em_execucao').sort((a,b)=>new Date(a.iniciado_em)-new Date(b.iniciado_em));
   byId('tvWaitingCount').textContent=waiting.length;byId('tvActiveCount').textContent=active.length;
+  const count=Math.max(waiting.length,active.length);
+  byId('tvGrid').dataset.density=count<=1?'single':count<=4?'few':'many';
   const item = (r,running)=>'<article class="tv-card">'+photoMarkup(r,'tv-photo')+'<div class="tv-card-body"><strong>'+esc(r.animal_nome)+'</strong><small>'+esc(serviceName(r.servico_id))+'</small>'+(running
       ? '<small>Profissional: '+esc(professionalName(r.profissional_id))+'</small><span class="tag active">Em atendimento</span>'
       : (r.agendado?'<span class="tag warn">Agendado'+(r.horario_agendado ? ' '+esc(r.horario_agendado.slice(0,5)) : '')+'</span>':'<small>Entrada '+hourOf(r.criado_em)+'</small>'))+'</div></article>';

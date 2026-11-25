@@ -1,0 +1,130 @@
+/* Bolhas & Latidos | Ajustes visuais v2.
+   Paleta extraída da logo original: laranja #FF8202, preto #000, branco #FFF.
+   Laranja escuro nos botões/textos garante contraste sobre fundo claro. */
+:root{
+  --ink:#1D1D1D;
+  --muted:#66615E;
+  --line:#E9DCCF;
+  --teal:#A74700;
+  --teal2:#FF8202;
+  --orange:#FF8202;
+  --pale:#FFF2E5;
+  --sky:#FFF8F2;
+  --canvas:#FAF8F6;
+  --white:#FFFFFF;
+  --shadow:0 16px 42px rgba(29,22,17,.08);
+}
+body{background:var(--canvas)}
+input,select,textarea{border-color:#DCD1C8}
+input:hover,select:hover,textarea:hover{border-color:#BEA796}
+button:focus-visible,a:focus-visible{outline:3px solid #FF8202;outline-offset:3px}
+.btn-primary{background:#AF4900;color:#fff;box-shadow:0 9px 20px rgba(152,63,0,.16)}
+.btn-primary:hover:not(:disabled){background:#913C00}
+.btn-outline{background:#fff;border-color:#E8D9CA}
+.btn-outline:hover:not(:disabled){background:#FFF5EA;border-color:#FF8202}
+.btn-ghost:hover:not(:disabled){background:#FFF0E3}
+.nav-item{color:#6B6560}
+.nav-item.active{border-bottom-color:#FF8202}
+.subnav-item.active{border-bottom-color:#FF8202}
+.eyebrow{color:#A74700}
+.panel,.stat-card,.queue-panel{border-color:#EFE1D5}
+.pet-card{border-color:#E8DDD4}
+.pet-detail{color:#635A54}
+.pet-photo{background:#FFF8F2}
+.pet-photo img{object-fit:contain;object-position:center}
+.pet-actions select{min-width:215px;flex:1 1 215px;max-width:none}
+.pet-actions .btn{flex:0 1 auto;min-width:115px}
+.tag.active{background:#FFF1E5;color:#A74700}
+.tag.warn{background:#FFF1E5;color:#975016}
+.connection-pill.ok{background:#E6F4EB;color:#166B45}
+
+/* Logomarca original preservada, com fundo branco e proporção natural. */
+.brand{gap:12px}
+.brand-logo{display:block;object-fit:contain;object-position:center;height:auto;aspect-ratio:306/335;flex:none}
+.brand-logo[hidden]{display:none}
+.brand:has(.brand-logo:not([hidden])) .brand-fallback{display:none}
+.topbar .brand,.tv-header .brand,.public-topbar .brand{color:#202020}
+.topbar .brand:has(.brand-logo:not([hidden])) .brand-fallback,
+.tv-header .brand:has(.brand-logo:not([hidden])) .brand-fallback,
+.public-topbar .brand:has(.brand-logo:not([hidden])) .brand-fallback{display:inline}
+.topbar .brand{font-size:20px;font-weight:800}
+.topbar .brand-logo{width:58px;height:auto;max-height:64px}
+.tv-header .brand{font-size:clamp(20px,2vw,27px)}
+.tv-header .brand-logo{width:72px;height:auto;max-height:80px}
+.public-topbar .brand{font-size:19px}
+.public-topbar .brand-logo{width:60px;height:auto;max-height:66px}
+.login-visual{background:linear-gradient(145deg,#171717 0%,#2C1C13 66%,#64300B 100%)}
+.login-visual .brand{align-self:flex-start;background:#fff;border-radius:18px;padding:13px 18px;border:1px solid rgba(255,130,2,.3);box-shadow:0 12px 40px rgba(0,0,0,.18)}
+.login-visual .brand-logo{width:156px;height:auto;max-height:171px}
+.login-visual .brand-light{color:#202020}
+.login-visual .brand-fallback{color:#202020}
+.login-visual .brand-fallback em{color:#FF8202}
+.login-visual .brand:has(.brand-logo:not([hidden])) .brand-fallback{display:none}
+.login-visual .login-decoration{opacity:.35}
+.login-card{gap:13px}
+.login-card>.micro{display:none}
+.topbar{padding-top:10px;padding-bottom:10px}
+
+/* Telão: imagem completa, sem corte; cartões maiores quando há poucas entradas. */
+.telao-page{background:#FFF5EA;padding:clamp(12px,1.7vw,24px);border-radius:20px}
+.tv-header{display:flex;align-items:center;min-height:100px;border:1px solid #F0E1D2;border-radius:18px;background:#fff;padding:14px clamp(16px,2vw,27px);margin-bottom:clamp(12px,1.6vw,20px);box-shadow:0 5px 16px rgba(40,25,10,.04)}
+.tv-now{font-size:clamp(13px,1.4vw,19px);color:#524942;font-variant-numeric:tabular-nums;text-align:right}
+.tv-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(12px,1.5vw,22px)}
+.tv-column{background:#fff;min-width:0;min-height:clamp(450px,63vh,850px);padding:clamp(14px,1.5vw,24px);border-radius:18px;border:1px solid #EEDFD1;box-shadow:0 12px 30px rgba(60,33,15,.045)}
+.tv-column h2{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:clamp(20px,1.8vw,30px);padding-bottom:16px;margin-bottom:1px}
+.tv-column h2 span{font-size:clamp(22px,2vw,32px);font-variant-numeric:tabular-nums;color:#AF4900}
+.tv-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:clamp(12px,1.4vw,19px);align-content:start;padding-top:18px}
+.tv-card{display:flex;flex-direction:column;min-width:0;background:#FFFCF9;border:1px solid #EAD9C9;border-radius:18px;overflow:hidden;box-shadow:0 8px 16px rgba(26,22,19,.04)}
+.tv-card .tv-photo{width:100%;height:clamp(200px,26vh,330px);min-height:0;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;color:#B64C00;border-bottom:1px solid #F2E7DD}
+.tv-card .tv-photo img{width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain!important;object-position:center!important;display:block}
+.tv-card-body{padding:clamp(14px,1.5vw,22px);display:flex;flex-direction:column;align-items:flex-start;gap:7px}
+.tv-card-body strong{font-size:clamp(20px,1.55vw,27px);line-height:1.2;color:#161616;overflow-wrap:anywhere}
+.tv-card-body small{font-size:clamp(13px,1.1vw,18px);line-height:1.35;color:#504B47}
+.tv-card-body .tag{font-size:clamp(11px,1vw,15px);font-weight:800}
+#tvGrid[data-density="single"] .tv-list{grid-template-columns:1fr}
+#tvGrid[data-density="single"] .tv-card .tv-photo{height:clamp(230px,34vh,430px)}
+#tvGrid[data-density="single"] .tv-card-body strong{font-size:clamp(23px,2vw,34px)}
+#tvGrid[data-density="few"] .tv-list{grid-template-columns:repeat(auto-fit,minmax(min(100%,245px),1fr))}
+#tvGrid[data-density="many"] .tv-list{grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr))}
+#tvGrid[data-density="many"] .tv-card .tv-photo{height:clamp(150px,19vh,230px)}
+#tvGrid[data-density="many"] .tv-card-body strong{font-size:clamp(18px,1.5vw,24px)}
+.tv-list .empty{min-height:125px;display:flex;align-items:center;justify-content:center;text-align:center;background:#FFFCF8;border:1px dashed #E8D5C3;border-radius:16px;padding:18px;color:#645A53}
+
+/* Tela cheia ocupa o monitor, sem deformar as fotografias. */
+#page-telao:fullscreen{display:flex;flex-direction:column;width:100vw;height:100dvh;min-height:100dvh;max-width:none;overflow:auto;margin:0;border-radius:0;padding:clamp(12px,1.6vw,25px);background:#FFF5EA}
+#page-telao:fullscreen>.page-heading{display:none!important}
+#page-telao:fullscreen .tv-header{flex:none;min-height:90px;margin-bottom:14px}
+#page-telao:fullscreen .tv-grid{flex:1;min-height:0;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+#page-telao:fullscreen .tv-column{min-height:0;overflow:auto}
+#page-telao:fullscreen .tv-list{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))}
+#page-telao:fullscreen #tvGrid[data-density="single"] .tv-list{grid-template-columns:1fr}
+#page-telao:fullscreen #tvGrid[data-density="many"] .tv-list{grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr))}
+#page-telao:fullscreen .tv-card .tv-photo{height:clamp(180px,32vh,390px)}
+#page-telao:fullscreen #tvGrid[data-density="many"] .tv-card .tv-photo{height:clamp(135px,20vh,220px)}
+
+@media(max-width:900px){
+  .tv-grid{grid-template-columns:1fr}
+  .tv-column{min-height:280px}
+  #page-telao:fullscreen .tv-grid{grid-template-columns:1fr}
+  #page-telao:fullscreen .tv-column{min-height:280px;overflow:visible}
+  #page-telao:fullscreen .tv-card .tv-photo{height:clamp(180px,28vh,310px)}
+}
+@media(max-width:650px){
+  .login-visual .brand-logo{width:116px;max-height:127px}
+  .login-visual .brand{padding:9px 13px}
+  .topbar .brand-logo{width:44px;max-height:49px}
+  .topbar .brand{font-size:16px}
+  .topbar .brand-fallback{white-space:normal}
+  .tv-header .brand-logo{width:56px;max-height:62px}
+  .tv-header .brand{font-size:18px}
+  .tv-now{font-size:12px}
+  .pet-actions{flex-direction:column;align-items:stretch}
+  .pet-actions select,.pet-actions .btn{width:100%;min-width:0;flex:auto}
+  .tv-card .tv-photo{height:210px}
+  .tv-column h2{font-size:21px}
+  .public-topbar .brand-logo{width:44px;max-height:49px}
+  .public-topbar .brand{font-size:16px}
+}
+@media(prefers-reduced-motion:reduce){
+ .btn,input,select,.nav-item,.tv-card{transition:none!important;animation:none!important}
+}
