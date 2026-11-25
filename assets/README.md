@@ -1,6 +1,6 @@
 # Identidade visual
 
-Adicionar nesta pasta o arquivo original **logo.png** do cliente Bolhas & Latidos.
+Adicionar nesta pasta o arquivo original **Logo.jpeg** do cliente Bolhas & Latidos.
 
 A aplicação usa a mesma imagem no login, no cabeçalho de todas as quatro telas e no telão. Sem o arquivo, exibe o nome da marca em texto.
 
