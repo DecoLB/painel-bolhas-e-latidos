@@ -13,6 +13,14 @@ MVP web para controle operacional de banho e tosa: entrada, fila de espera, exec
 - Publicação GitHub Pages validada e homologação básica do fluxo Entrada → Prestador → Telão → Gerencial concluída.
 - Conta operacional única criada e vinculada à tabela `app_operadores` (separada do administrador).
 
+## V1.8 — Experiência visual, gerenciamento e créditos
+- Login centralizado com logomarca, título e formulário equilibrados.
+- Versão 1.8.0 e crédito **Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA** no login, rodapé do sistema, formulário público, telão em tela cheia e ficha impressa.
+- Visão gerencial: entradas registradas, espera média entre serviços iniciados, equipe em atividade, agendamentos que deram entrada, curva de entradas/conclusões em 7 dias e leitura operacional dos dados reais.
+- Prestador: seletor acessível personalizado com sigla destacada do nome e navegação por teclado, mantendo o identificador do profissional enviado à RPC existente.
+- Telão: cartões horizontais compactos, foto íntegra à esquerda, informação em negrito e maior densidade por coluna, também na tela cheia.
+- Hovers, transições discretas, estados de foco e suporte a movimento reduzido. Sem alteração de schema ou políticas RLS.
+
 ## Tecnologias
 - HTML, CSS e JavaScript sem build.
 - Supabase Auth, Postgres, Realtime e Storage.

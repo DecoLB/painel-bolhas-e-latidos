@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="./agendamento-admin.css">
   <link rel="stylesheet" href="./programacao-entrada.css">
   <link rel="stylesheet" href="./visual-v2.css?v=2">
+  <link rel="stylesheet" href="./visual-v3.css?v=180">
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -36,6 +37,7 @@
       <p id="setupInfo" class="setup-info" hidden>O banco ainda não foi conectado. Configure o projeto Supabase em config.js para habilitar o acesso.</p>
       
     </form>
+    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 1.8.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
   </section>
   <div id="appShell" class="shell" hidden>
     <header class="topbar">
@@ -75,6 +77,27 @@
             <article class="stat-card"><span class="stat-label">Em execução</span><strong id="statActive">—</strong><small>Em andamento</small></article>
             <article class="stat-card"><span class="stat-label">Tempo médio de execução</span><strong id="statDuration">—</strong><small>Dos concluídos no dia</small></article>
           </div>
+
+          <section class="insights-section" aria-labelledby="insightsTitle">
+            <div class="insights-heading"><div><span class="eyebrow">INTELIGÊNCIA OPERACIONAL</span><h2 id="insightsTitle">Insights de organização e gestão</h2></div><p>Indicadores calculados a partir dos registros disponíveis; acompanham a data selecionada.</p></div>
+            <div class="insights-stats">
+              <article class="insight-mini"><span>Entradas registradas</span><strong id="insightEntries">0</strong><small>Na data de referência</small></article>
+              <article class="insight-mini"><span>Espera média</span><strong id="insightWait">—</strong><small>Atendimentos iniciados na data</small></article>
+              <article class="insight-mini"><span>Profissionais em atividade</span><strong id="insightStaff">0</strong><small>Que iniciaram atendimentos na data</small></article>
+              <article class="insight-mini"><span>Entradas de agendamentos</span><strong id="insightAppointments">0</strong><small>Pré-cadastros recebidos na data</small></article>
+            </div>
+            <div class="insights-details">
+              <article class="panel insight-trend-panel">
+                <div class="panel-heading"><h2>Evolução dos últimos 7 dias</h2><p>Entradas e conclusões por dia, até a data de referência.</p></div>
+                <div class="insight-legend"><span><i class="insight-legend-dot entries"></i> Entradas</span><span><i class="insight-legend-dot done"></i> Conclusões</span></div>
+                <div id="insightTrend" class="insight-trend" aria-live="polite"></div>
+              </article>
+              <article class="panel insight-ops-panel">
+                <div class="panel-heading"><h2>Leitura da operação</h2><p>Resumo factual para organização da equipe.</p></div>
+                <div id="insightNarrative" class="insight-narrative" aria-live="polite"></div>
+              </article>
+            </div>
+          </section>
           <div class="split">
             <section class="panel"><div class="panel-heading"><h2>Atendimentos por profissional</h2><p>Quantidade concluída no dia</p></div><div id="professionalsChart" class="bars"></div></section>
             <section class="panel"><div class="panel-heading"><h2>Serviços mais realizados</h2><p>Quantidade concluída no dia</p></div><div id="servicesChart" class="bars"></div></section>
@@ -165,9 +188,10 @@
         <div class="page-heading no-print"><div><span class="eyebrow">PAINEL OPERACIONAL</span><h1>Visão do telão</h1><p>Exibição contínua das filas de atendimento.</p></div><button id="fullscreenBtn" type="button" class="btn btn-outline">Tela cheia</button></div>
         <div class="tv-header"><div class="brand"><img class="brand-logo" src="./assets/logo.webp" alt="Logo Bolhas & Latidos" onerror="this.hidden=true"><span class="brand-fallback">Bolhas <em>&</em> Latidos</span></div><div class="tv-now" id="tvClock"></div></div>
         <div class="tv-grid" id="tvGrid" data-density="single"><div class="tv-column"><h2>Aguardando <span id="tvWaitingCount">0</span></h2><div id="tvWaiting" class="tv-list"></div></div><div class="tv-column"><h2>Em execução <span id="tvActiveCount">0</span></h2><div id="tvActive" class="tv-list"></div></div></div>
+        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 1.8.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
       </section>
     </main>
-    <footer class="footer">Bolhas & Latidos · Gestão operacional <span id="lastUpdated">Aguardando sincronização</span></footer>
+    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 1.8.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
   </div>
   <section id="bookingPrintSheet" hidden aria-label="Ficha de programação para impressão"></section>
   <script src="./config.js?v=20261125-2"></script>

@@ -175,6 +175,7 @@ function renderReport() {
   byId('statWaiting').textContent=waiting;
   byId('statActive').textContent=active;
   byId('statDuration').textContent=times.length ? duration(Math.round(times.reduce((a,b)=>a+b,0)/times.length)) : '—';
+  renderInsights(date,done);
   const byStaff=new Map(),byService=new Map();
   for (const r of done) {
     const n=professionalName(r.profissional_id),s=serviceName(r.servico_id);
@@ -187,6 +188,59 @@ function renderReport() {
     '<tr><td>'+esc(r.animal_nome)+'</td><td>'+esc(serviceName(r.servico_id))+'</td><td>'+esc(professionalName(r.profissional_id))+'</td><td>'+hourOf(r.criado_em)+'</td><td>'+hourOf(r.iniciado_em)+'</td><td>'+hourOf(r.concluido_em)+'</td><td>'+duration(minutesBetween(r.criado_em,r.iniciado_em))+'</td><td>'+duration(minutesBetween(r.iniciado_em,r.concluido_em))+'</td><td>'+esc(r.status==='concluido'?'Concluído':r.status==='em_execucao'?'Em execução':'Aguardando')+'</td></tr>'
   ).join('') || '<tr><td colspan="9">Nenhum atendimento registrado na data selecionada.</td></tr>';
 }
+
+function renderInsights(date, done) {
+  if(state.role!=='admin')return;
+  const arrivals=state.attendances.filter(r=>dayOf(r.criado_em)===date);
+  const started=state.attendances.filter(r=>r.iniciado_em && dayOf(r.iniciado_em)===date);
+  const waitTimes=started.map(r=>minutesBetween(r.criado_em,r.iniciado_em)).filter(n=>n!==null);
+  const professionals=new Set(started.map(r=>r.profissional_id).filter(Boolean));
+  const approvedArrivals=arrivals.filter(r=>Boolean(r.agendamento_id));
+  byId('insightEntries').textContent=String(arrivals.length);
+  byId('insightWait').textContent=waitTimes.length
+    ? duration(Math.round(waitTimes.reduce((sum,value)=>sum+value,0)/waitTimes.length)):'—';
+  byId('insightStaff').textContent=String(professionals.size);
+  byId('insightAppointments').textContent=String(approvedArrivals.length);
+
+  const anchor=new Date(date+'T12:00:00Z');
+  const dates=Array.from({length:7},(_,i)=>{
+    const d=new Date(anchor);d.setUTCDate(anchor.getUTCDate()+i-6);
+    return d.toISOString().slice(0,10);
+  });
+  const items=dates.map(day=>({
+    day,entries:state.attendances.filter(r=>dayOf(r.criado_em)===day).length,
+    done:state.attendances.filter(r=>r.concluido_em && dayOf(r.concluido_em)===day).length
+  }));
+  const max=Math.max(1,...items.flatMap(r=>[r.entries,r.done]));
+  byId('insightTrend').innerHTML=items.map(r=>{
+    const label=r.day.slice(8,10)+'/'+r.day.slice(5,7);
+    const bars=(count,type,name)=>'<div class="insight-bar-line"><div class="insight-bar-track">'
+      +'<div class="insight-bar-fill '+type+'" style="width:'+(100*count/max)+'%"></div></div>'
+      +'<strong class="insight-bar-value">'+count+'</strong></div>';
+    return '<div class="insight-trend-row"><strong class="insight-date">'+esc(label)+'</strong>'
+      +'<div class="insight-trend-bars" role="group" aria-label="'+esc(label)+': '+r.entries+
+      ' entradas e '+r.done+' conclusões">'+bars(r.entries,'entries','Entradas')
+      +bars(r.done,'done','Conclusões')+'</div></div>';
+  }).join('');
+
+  const waiting=state.attendances.filter(r=>r.status==='aguardando');
+  const active=state.attendances.filter(r=>r.status==='em_execucao');
+  const oldest=waiting.length ? Math.max(...waiting.map(r=>minutesBetween(r.criado_em,new Date())||0)):null;
+  const byService=new Map();
+  for(const r of done){const id=serviceName(r.servico_id);byService.set(id,(byService.get(id)||0)+1);}
+  const most=Math.max(0,...byService.values());
+  const popular=[...byService].filter(x=>x[1]===most).map(x=>x[0]);
+  const summary=[
+    ['Entradas e conclusões','Na data selecionada: '+arrivals.length+' entrada(s) e '+done.length+' conclusão(ões).'],
+    ['Fila neste momento',waiting.length+' aguardando · '+active.length+' em execução.'],
+    ['Maior espera atual',oldest===null?'Sem animais aguardando.':duration(oldest)+' desde a entrada do animal que aguarda há mais tempo.'],
+    ['Serviço mais concluído',popular.length?popular.join(' / ')+' ('+most+' concluído(s) na data).':'Nenhum serviço concluído nessa data.']
+  ];
+  byId('insightNarrative').innerHTML=summary.map(([title,desc])=>
+    '<div class="insight-note"><strong>'+esc(title)+'</strong><span>'+esc(desc)+'</span></div>'
+  ).join('');
+}
+
 function photoMarkup(r,cls='pet-photo') {
   const cached = state.images.get(r.foto_path);
   return '<div class="'+cls+'">'+(cached && cached.expires>Date.now()
@@ -196,6 +250,41 @@ function photoMarkup(r,cls='pet-photo') {
 function scheduleLabel(r) {
   return r.agendado ? '<span class="tag warn">Agendado'+(r.horario_agendado ? ' · '+esc(r.horario_agendado.slice(0,5)) : '')+'</span>' : '<span class="tag">Ordem de entrada</span>';
 }
+
+function professionalPicker(r,professionals) {
+  const id=esc(r.id);
+  const options=professionals.map(p=>
+    '<button type="button" class="professional-option" role="option" aria-selected="false"'
+    +' data-professional-choice="'+id+'" data-professional-id="'+esc(p.id)+'"'
+    +' data-professional-name="'+esc(p.nome)+'" data-professional-code="'+esc(p.sigla)+'">'
+    +'<span class="professional-code">'+esc(p.sigla)+'</span>'
+    +'<span class="professional-name">'+esc(p.nome)+'</span>'
+    +'</button>'
+  ).join('');
+  return '<div class="professional-picker" data-professional-picker="'+id+'">'
+    +'<button type="button" class="professional-trigger" data-professional-toggle="'+id+'"'
+    +' aria-expanded="false" aria-controls="professional-options-'+id+'"'
+    +(professionals.length?'':' disabled')+'>'
+    +'<span class="professional-choice"><small>Responsável</small>'
+    +'<strong data-professional-label="'+id+'">'+(professionals.length?'Selecionar profissional':'Sem profissional ativo')+'</strong></span>'
+    +'<span class="professional-chevron" aria-hidden="true">⌄</span></button>'
+    +'<div id="professional-options-'+id+'" class="professional-menu" role="listbox"'
+    +' aria-label="Escolher profissional" hidden>'+options+'</div>'
+    +'<select data-assume-select="'+id+'" tabindex="-1" aria-hidden="true" hidden>'
+    +'<option value="">Selecionar profissional</option>'
+    +professionals.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.sigla)+' · '+esc(p.nome)+'</option>').join('')
+    +'</select></div>';
+}
+function closeProfessionalPickers(exceptId=null){
+  document.querySelectorAll('[data-professional-picker]').forEach(picker=>{
+    if(exceptId && picker.dataset.professionalPicker===exceptId)return;
+    const menu=picker.querySelector('.professional-menu');
+    const button=picker.querySelector('[data-professional-toggle]');
+    if(menu)menu.hidden=true;
+    if(button)button.setAttribute('aria-expanded','false');
+  });
+}
+
 function renderQueues() {
   const waiting=state.attendances.filter(r=>r.status==='aguardando').sort((a,b)=>new Date(a.criado_em)-new Date(b.criado_em));
   const active=state.attendances.filter(r=>r.status==='em_execucao').sort((a,b)=>new Date(a.iniciado_em)-new Date(b.iniciado_em));
@@ -205,9 +294,8 @@ function renderQueues() {
     '<article class="pet-card">'+photoMarkup(r)+'<div class="pet-info"><div class="pet-head"><strong>'+esc(r.animal_nome)+'</strong>'+scheduleLabel(r)+'</div><div class="pet-meta">'+esc(serviceName(r.servico_id))+' · Entrada '+hourOf(r.criado_em)+'</div>'+
     (r.tutor ? '<div class="pet-detail">Tutor: '+esc(r.tutor)+'</div>' : '')+
     (r.observacao ? '<div class="pet-detail">Obs.: '+esc(r.observacao)+'</div>' : '')+
-    '<div class="pet-actions"><select aria-label="Profissional para '+esc(r.animal_nome)+'" data-assume-select="'+esc(r.id)+'"><option value="">Selecionar profissional</option>'+
-    professionals.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.sigla)+' · '+esc(p.nome)+'</option>').join('')+
-    '</select><button type="button" class="btn btn-primary" data-assume="'+esc(r.id)+'">Iniciar</button></div></div></article>'
+    '<div class="pet-actions">'+professionalPicker(r,professionals)+
+    '<button type="button" class="btn btn-primary" data-assume="'+esc(r.id)+'">Iniciar</button></div></div></article>'
   ).join('') || '<div class="empty">Nenhum animal aguardando atendimento.</div>';
   byId('activeList').innerHTML=active.map(r=>
     '<article class="pet-card">'+photoMarkup(r)+'<div class="pet-info"><div class="pet-head"><strong>'+esc(r.animal_nome)+'</strong><span class="tag active">Em execução</span></div><div class="pet-meta">'+esc(serviceName(r.servico_id))+'</div><div class="pet-detail">Profissional: <strong>'+esc(professionalName(r.profissional_id))+'</strong></div><div class="pet-detail">Início: '+hourOf(r.iniciado_em)+'</div><div class="pet-actions"><button type="button" class="btn btn-primary" data-finish="'+esc(r.id)+'">Finalizar atendimento</button></div></div></article>'
@@ -219,9 +307,16 @@ function renderTV() {
   byId('tvWaitingCount').textContent=waiting.length;byId('tvActiveCount').textContent=active.length;
   const count=Math.max(waiting.length,active.length);
   byId('tvGrid').dataset.density=count<=1?'single':count<=4?'few':'many';
-  const item = (r,running)=>'<article class="tv-card">'+photoMarkup(r,'tv-photo')+'<div class="tv-card-body"><strong>'+esc(r.animal_nome)+'</strong><small>'+esc(serviceName(r.servico_id))+'</small>'+(running
-      ? '<small>Profissional: '+esc(professionalName(r.profissional_id))+'</small><span class="tag active">Em atendimento</span>'
-      : (r.agendado?'<span class="tag warn">Agendado'+(r.horario_agendado ? ' '+esc(r.horario_agendado.slice(0,5)) : '')+'</span>':'<small>Entrada '+hourOf(r.criado_em)+'</small>'))+'</div></article>';
+  const item = (r,running)=>'<article class="tv-card '+(running?'tv-running':'tv-waiting')+'">'
+    +photoMarkup(r,'tv-photo')
+    +'<div class="tv-card-body"><strong class="tv-pet-name">'+esc(r.animal_nome)+'</strong>'
+    +'<div class="tv-data-line"><span>Serviço</span><strong>'+esc(serviceName(r.servico_id))+'</strong></div>'
+    +(running
+      ? '<div class="tv-data-line"><span>Responsável</span><strong>'+esc(professionalName(r.profissional_id))+'</strong></div>'
+        +'<span class="tag active tv-status">Em atendimento</span>'
+      : '<div class="tv-data-line"><span>Entrada</span><strong>'+hourOf(r.criado_em)+'</strong></div>'
+        +(r.agendado?'<span class="tag warn tv-status">Agendado'+(r.horario_agendado?' · '+esc(r.horario_agendado.slice(0,5)):'')+'</span>':'')
+    )+'</div></article>';
   byId('tvWaiting').innerHTML=waiting.map(r=>item(r,false)).join('') || '<div class="empty">Nenhum animal aguardando.</div>';
   byId('tvActive').innerHTML=active.map(r=>item(r,true)).join('') || '<div class="empty">Nenhum atendimento em execução.</div>';
 }
@@ -382,11 +477,57 @@ function bindEvents() {
     }finally{setLoading(false);}
   });
   byId('waitingList').addEventListener('click',async e=>{
+    const choice=e.target.closest('[data-professional-choice]');
+    if(choice){
+      const id=choice.dataset.professionalChoice;
+      const picker=choice.closest('[data-professional-picker]');
+      const select=picker?.querySelector('select[data-assume-select]');
+      const label=picker?.querySelector('[data-professional-label]');
+      if(!select||!label)return;
+      select.value=choice.dataset.professionalId;
+      label.innerHTML='<span class="professional-code professional-selected-code">'+esc(choice.dataset.professionalCode)+'</span>'
+        +'<span>'+esc(choice.dataset.professionalName)+'</span>';
+      picker.querySelectorAll('[role="option"]').forEach(item=>
+        item.setAttribute('aria-selected',String(item===choice)));
+      closeProfessionalPickers();
+      picker.querySelector('[data-professional-toggle]')?.focus();
+      return;
+    }
+    const toggle=e.target.closest('[data-professional-toggle]');
+    if(toggle){
+      const id=toggle.dataset.professionalToggle;
+      const picker=toggle.closest('[data-professional-picker]');
+      const menu=picker.querySelector('.professional-menu');
+      const nextOpen=menu.hidden;
+      closeProfessionalPickers();
+      menu.hidden=!nextOpen;
+      toggle.setAttribute('aria-expanded',String(nextOpen));
+      if(nextOpen)menu.querySelector('[role="option"][aria-selected="true"],[role="option"]')?.focus();
+      return;
+    }
     const button=e.target.closest('[data-assume]');if(!button)return;
     const id=button.dataset.assume;
     const select=byId('waitingList').querySelector('select[data-assume-select="'+id+'"]');
     if(!select?.value){notify('Selecione o profissional antes de iniciar.','error');return;}
     await runRpc('iniciar_atendimento',{p_atendimento_id:id,p_profissional_id:select.value});
+  });
+  byId('waitingList').addEventListener('keydown',e=>{
+    const option=e.target.closest('[data-professional-choice]');
+    const toggle=e.target.closest('[data-professional-toggle]');
+    if(e.key==='Escape' && (option || toggle)){
+      const picker=e.target.closest('[data-professional-picker]');
+      closeProfessionalPickers();
+      picker?.querySelector('[data-professional-toggle]')?.focus();
+    }
+    if(option && (e.key==='ArrowDown'||e.key==='ArrowUp')){
+      e.preventDefault();
+      const options=[...option.closest('.professional-menu').querySelectorAll('[role="option"]')];
+      const index=options.indexOf(option);
+      options[(index+(e.key==='ArrowDown'?1:-1)+options.length)%options.length]?.focus();
+    }
+  });
+  document.addEventListener('click',e=>{
+    if(!e.target.closest('.professional-picker'))closeProfessionalPickers();
   });
   byId('activeList').addEventListener('click',async e=>{
     const button=e.target.closest('[data-finish]');if(button)await runRpc('finalizar_atendimento',{p_atendimento_id:button.dataset.finish});
