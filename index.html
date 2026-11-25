@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#145b70">
+  <meta name="description" content="Bolhas & Latidos — Painel de gestão operacional">
+  <title>Bolhas & Latidos | Painel Operacional</title>
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <section id="loginScreen" class="login-screen">
+    <div class="login-visual">
+      <div class="login-decoration" aria-hidden="true"></div>
+      <div class="brand brand-light">
+        <img class="brand-logo" src="./assets/logo.png" alt="Logo Bolhas & Latidos" onerror="this.hidden=true">
+        <span class="brand-fallback">Bolhas <em>&</em> Latidos</span>
+      </div>
+      <h1>Cuidado em cada atendimento.<br>Controle em cada etapa.</h1>
+      <p>Seu painel de entrada, execução e gestão de serviços.</p>
+    </div>
+    <form id="loginForm" class="login-card">
+      <span class="eyebrow">ACESSO ADMINISTRATIVO</span>
+      <h2>Bem-vindo de volta</h2>
+      <p class="muted">Entre com o acesso do administrador para liberar as telas.</p>
+      <label for="email">E-mail</label>
+      <input id="email" name="email" type="email" autocomplete="username" required placeholder="administrador@exemplo.com">
+      <label for="password">Senha</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required minlength="6" placeholder="Sua senha">
+      <button id="loginBtn" class="btn btn-primary btn-wide" type="submit">Entrar no painel <span>→</span></button>
+      <p id="setupInfo" class="setup-info" hidden>O banco ainda não foi conectado. Configure o projeto Supabase em config.js para habilitar o acesso.</p>
+      <p class="micro">Acesso exclusivo do administrador · Sem contas individuais de colaboradores</p>
+    </form>
+  </section>
+  <div id="appShell" class="shell" hidden>
+    <header class="topbar">
+      <div class="brand">
+        <img class="brand-logo" src="./assets/logo.png" alt="Logo Bolhas & Latidos" onerror="this.hidden=true">
+        <span class="brand-fallback">Bolhas <em>&</em> Latidos</span>
+      </div>
+      <div class="header-meta">
+        <span id="connectionPill" class="connection-pill">Conectando...</span>
+        <span id="clock" class="clock"></span>
+        <button type="button" id="logoutBtn" class="btn btn-ghost">Sair</button>
+      </div>
+    </header>
+    <nav class="nav" aria-label="Navegação principal">
+      <button type="button" class="nav-item active" data-page="admin">◫ <span>Administrador</span></button>
+      <button type="button" class="nav-item" data-page="entrada">✚ <span>Entrada</span></button>
+      <button type="button" class="nav-item" data-page="prestador">✂ <span>Prestador</span></button>
+      <button type="button" class="nav-item" data-page="telao">▣ <span>Telão</span></button>
+    </nav>
+    <main class="content">
+      <section id="page-admin" class="page active">
+        <div class="page-heading">
+          <div><span class="eyebrow">GESTÃO DO NEGÓCIO</span><h1>Administração</h1><p>Controle dos cadastros e acompanhamento da operação.</p></div>
+          <span class="date-label" id="adminToday"></span>
+        </div>
+        <div class="subnav">
+          <button type="button" class="subnav-item active" data-admin-tab="gerencial">Visão gerencial</button>
+          <button type="button" class="subnav-item" data-admin-tab="servicos">Serviços</button>
+          <button type="button" class="subnav-item" data-admin-tab="profissionais">Profissionais</button>
+        </div>
+        <div id="admin-gerencial" class="admin-panel">
+          <div class="toolbar no-print"><label for="reportDate">Data de referência</label><input type="date" id="reportDate"><button class="btn btn-outline" id="printBtn" type="button">Imprimir relatório diário</button></div>
+          <div class="stat-grid">
+            <article class="stat-card"><span class="stat-label">Atendimentos concluídos</span><strong id="statCompleted">—</strong><small>No dia selecionado</small></article>
+            <article class="stat-card"><span class="stat-label">Aguardando</span><strong id="statWaiting">—</strong><small>Na fila atual</small></article>
+            <article class="stat-card"><span class="stat-label">Em execução</span><strong id="statActive">—</strong><small>Em andamento</small></article>
+            <article class="stat-card"><span class="stat-label">Tempo médio de execução</span><strong id="statDuration">—</strong><small>Dos concluídos no dia</small></article>
+          </div>
+          <div class="split">
+            <section class="panel"><div class="panel-heading"><h2>Atendimentos por profissional</h2><p>Quantidade concluída no dia</p></div><div id="professionalsChart" class="bars"></div></section>
+            <section class="panel"><div class="panel-heading"><h2>Serviços mais realizados</h2><p>Quantidade concluída no dia</p></div><div id="servicesChart" class="bars"></div></section>
+          </div>
+          <section class="panel"><div class="panel-heading"><h2>Relatório diário</h2><p>Registros concluídos do período selecionado, com duração e responsável.</p></div><div class="table-scroll"><table><thead><tr><th>Animal</th><th>Serviço</th><th>Profissional</th><th>Entrada</th><th>Início</th><th>Fim</th><th>Espera</th><th>Execução</th></tr></thead><tbody id="reportTable"></tbody></table></div></section>
+        </div>
+        <div id="admin-servicos" class="admin-panel" hidden>
+          <section class="panel">
+            <div class="panel-heading"><h2>Catálogo de serviços</h2><p>Somente os serviços ativos serão oferecidos no painel de entrada.</p></div>
+            <form id="serviceForm" class="inline-form"><label class="sr-only" for="serviceName">Novo serviço</label><input id="serviceName" maxlength="100" required placeholder="Nome do serviço"><button class="btn btn-primary">Cadastrar serviço</button></form>
+            <div id="servicesList" class="entity-list"></div>
+          </section>
+        </div>
+        <div id="admin-profissionais" class="admin-panel" hidden>
+          <section class="panel">
+            <div class="panel-heading"><h2>Equipe</h2><p>O nome selecionado identifica quem executou o atendimento.</p></div>
+            <form id="professionalForm" class="inline-form"><input id="professionalCode" aria-label="Sigla" required maxlength="12" placeholder="Sigla"><input id="professionalName" aria-label="Nome completo" required maxlength="100" placeholder="Nome do profissional"><button class="btn btn-primary">Cadastrar profissional</button></form>
+            <div id="professionalsList" class="entity-list"></div>
+          </section>
+        </div>
+      </section>
+      <section id="page-entrada" class="page" hidden>
+        <div class="page-heading"><div><span class="eyebrow">RECEPÇÃO</span><h1>Entrada de animal</h1><p>Registre o serviço para colocar o animal na fila de espera.</p></div></div>
+        <div class="entry-layout">
+          <form id="entryForm" class="panel entry-form">
+            <div class="two-col">
+              <div class="field"><label for="animalName">Nome do animal <b>*</b></label><input id="animalName" required maxlength="120" placeholder="Nome do animal"></div>
+              <div class="field"><label for="tutorName">Tutor <span>(opcional)</span></label><input id="tutorName" maxlength="150" placeholder="Nome do tutor"></div>
+            </div>
+            <div class="field"><label for="entryService">Serviço a realizar <b>*</b></label><select id="entryService" required><option value="">Selecione um serviço</option></select></div>
+            <div class="field"><label for="isScheduled">Serviço agendado? <b>*</b></label><select id="isScheduled" required><option value="">Selecione</option><option value="sim">Sim</option><option value="nao">Não</option></select></div>
+            <div id="scheduledTimeField" class="field" hidden><label for="scheduledTime">Horário agendado <b>*</b></label><input id="scheduledTime" type="time"></div>
+            <div class="field"><label for="entryObs">Observações <span>(opcional)</span></label><textarea id="entryObs" rows="4" maxlength="1000" placeholder="Informações importantes para a equipe"></textarea><small class="counter"><span id="obsCounter">0</span>/1000</small></div>
+            <div class="field"><label>Foto do animal <span>(opcional)</span></label><div class="photo-actions"><label class="btn btn-outline" for="photoFile">Anexar imagem</label><input id="photoFile" type="file" accept="image/*" hidden><button class="btn btn-outline" type="button" id="openCamera">Abrir webcam</button><button class="btn btn-ghost" type="button" id="clearPhoto">Remover foto</button></div><div class="photo-preview" id="photoPreview"><span>Nenhuma imagem selecionada</span></div><div class="camera-box" id="cameraBox" hidden><video id="cameraVideo" playsinline autoplay muted></video><div><button type="button" id="capturePhoto" class="btn btn-primary">Capturar foto</button><button type="button" id="stopCamera" class="btn btn-outline">Cancelar</button></div></div></div>
+            <button id="saveEntryBtn" class="btn btn-primary btn-wide" type="submit">Registrar entrada e enviar para fila →</button>
+          </form>
+          <aside class="entry-aside"><div class="aside-icon">✦</div><h2>Pronto para começar</h2><p>Ao registrar a entrada, o animal aparecerá automaticamente na fila de espera.</p><div class="tip"><strong>Registro automático</strong><span>Data e hora são armazenadas pelo sistema.</span></div><div class="tip"><strong>Agendamentos em destaque</strong><span>A identificação do horário será mostrada nas filas.</span></div></aside>
+        </div>
+      </section>
+      <section id="page-prestador" class="page" hidden>
+        <div class="page-heading"><div><span class="eyebrow">OPERAÇÃO</span><h1>Painel do prestador</h1><p>Assuma um atendimento e finalize quando o serviço terminar.</p></div><span class="live-indicator"><i></i> Atualização em tempo real</span></div>
+        <div class="queue-grid">
+          <section class="panel queue-panel"><div class="queue-title"><h2>Fila de espera <span id="waitingCount">0</span></h2><p>Por ordem de cadastro</p></div><div id="waitingList" class="queue-list"></div></section>
+          <section class="panel queue-panel"><div class="queue-title"><h2>Em execução <span id="activeCount">0</span></h2><p>Atendimentos em andamento</p></div><div id="activeList" class="queue-list"></div></section>
+        </div>
+      </section>
+      <section id="page-telao" class="page telao-page" hidden>
+        <div class="page-heading no-print"><div><span class="eyebrow">PAINEL OPERACIONAL</span><h1>Visão do telão</h1><p>Exibição contínua das filas de atendimento.</p></div><button id="fullscreenBtn" type="button" class="btn btn-outline">Tela cheia</button></div>
+        <div class="tv-header"><div class="brand"><img class="brand-logo" src="./assets/logo.png" alt="Logo Bolhas & Latidos" onerror="this.hidden=true"><span class="brand-fallback">Bolhas <em>&</em> Latidos</span></div><div class="tv-now" id="tvClock"></div></div>
+        <div class="tv-grid"><div class="tv-column"><h2>Aguardando <span id="tvWaitingCount">0</span></h2><div id="tvWaiting" class="tv-list"></div></div><div class="tv-column"><h2>Em execução <span id="tvActiveCount">0</span></h2><div id="tvActive" class="tv-list"></div></div></div>
+      </section>
+    </main>
+    <footer class="footer">Bolhas & Latidos · Gestão operacional <span id="lastUpdated">Aguardando sincronização</span></footer>
+  </div>
+  <script src="./config.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
