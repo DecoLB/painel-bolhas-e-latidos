@@ -89,6 +89,7 @@ async function showApp() {
     switchPage(role === 'admin' ? 'admin' : 'entrada');
     await refresh();
     subscribe();
+    window.dispatchEvent(new Event('bolhas:authenticated'));
   } catch(err) {
     notify('Não foi possível validar o perfil: '+err.message,'error');
     showLogin();
@@ -193,7 +194,7 @@ function photoMarkup(r,cls='pet-photo') {
     : '✦')+'</div>';
 }
 function scheduleLabel(r) {
-  return r.agendado ? '<span class="tag warn">Agendado · '+esc((r.horario_agendado||'').slice(0,5))+'</span>' : '<span class="tag">Ordem de entrada</span>';
+  return r.agendado ? '<span class="tag warn">Agendado'+(r.horario_agendado ? ' · '+esc(r.horario_agendado.slice(0,5)) : '')+'</span>' : '<span class="tag">Ordem de entrada</span>';
 }
 function renderQueues() {
   const waiting=state.attendances.filter(r=>r.status==='aguardando').sort((a,b)=>new Date(a.criado_em)-new Date(b.criado_em));
@@ -218,7 +219,7 @@ function renderTV() {
   byId('tvWaitingCount').textContent=waiting.length;byId('tvActiveCount').textContent=active.length;
   const item = (r,running)=>'<article class="tv-card">'+photoMarkup(r,'tv-photo')+'<div class="tv-card-body"><strong>'+esc(r.animal_nome)+'</strong><small>'+esc(serviceName(r.servico_id))+'</small>'+(running
       ? '<small>Profissional: '+esc(professionalName(r.profissional_id))+'</small><span class="tag active">Em atendimento</span>'
-      : (r.agendado?'<span class="tag warn">Agendado '+esc((r.horario_agendado||'').slice(0,5))+'</span>':'<small>Entrada '+hourOf(r.criado_em)+'</small>'))+'</div></article>';
+      : (r.agendado?'<span class="tag warn">Agendado'+(r.horario_agendado ? ' '+esc(r.horario_agendado.slice(0,5)) : '')+'</span>':'<small>Entrada '+hourOf(r.criado_em)+'</small>'))+'</div></article>';
   byId('tvWaiting').innerHTML=waiting.map(r=>item(r,false)).join('') || '<div class="empty">Nenhum animal aguardando.</div>';
   byId('tvActive').innerHTML=active.map(r=>item(r,true)).join('') || '<div class="empty">Nenhum atendimento em execução.</div>';
 }
@@ -414,4 +415,4 @@ async function start() {
 start().catch(err=>notify('Erro ao iniciar o painel: '+err.message,'error'));
 
 // Compartilhamento interno do cliente autenticado com o calendário administrativo.
-export {supabase, state, notify, esc, today};
+export {supabase, state, notify, esc, today, refresh};
