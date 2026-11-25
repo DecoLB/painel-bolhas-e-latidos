@@ -36,9 +36,12 @@ Deno.serve(async (req:Request):Promise<Response>=>{
   const db=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}});
 
   if(req.method==="GET"){
-    const {data,error}=await db.from("servicos").select("id,nome").eq("ativo",true).order("nome");
-    if(error) return respond({erro:"Não foi possível carregar os serviços."},503);
-    return respond({servicos:data||[]});
+    const [services,breeds]=await Promise.all([
+      db.from("servicos").select("id,nome").eq("ativo",true).order("nome"),
+      db.from("catalogo_racas").select("especie,nome").order("nome")
+    ]);
+    if(services.error||breeds.error) return respond({erro:"Não foi possível carregar os dados do formulário."},503);
+    return respond({servicos:services.data||[],racas:breeds.data||[]});
   }
 
   let input:Record<string,unknown>;
@@ -55,6 +58,9 @@ Deno.serve(async (req:Request):Promise<Response>=>{
 
   const tutor_nome=text(input.tutor_nome,120), pet_nome=text(input.pet_nome,120);
   const porte=text(input.porte,7), servico_id=text(input.servico_id,36);
+  const especie=text(input.especie,10),raca=text(input.raca,100);
+  // Obrigatório no formulário novo. Somente 'true' requer endereço.
+  const transporte_bolhas=input.transporte_bolhas;
   const data_desejada=text(input.data_desejada,10);
   const cep=text(input.cep,9).replace(/\D/g,"");
   const rua=text(input.rua,180),numero=text(input.numero,20);
@@ -62,12 +68,18 @@ Deno.serve(async (req:Request):Promise<Response>=>{
   const bairro=text(input.bairro,120),cidade=text(input.cidade,120),uf=text(input.uf,2).toUpperCase();
   const hoje=brazilToday(), minimo=plusDays(hoje,1), maximo=plusDays(hoje,30);
   const shortNames = tutor_nome.length>=2 && tutor_nome.length<=120 && pet_nome.length>=2 && pet_nome.length<=120;
+  const endOk=/^\d{8}$/.test(cep) && rua.length>0 && rua.length<=180 &&
+    numero.length>0 && numero.length<=20 && complemento.length<=180 &&
+    bairro.length<=120 && cidade.length>0 && cidade.length<=120 &&
+    /^[A-Z]{2}$/.test(uf);
   if(!shortNames || !["pequeno","medio","grande"].includes(porte) ||
+    !["cachorro","gato"].includes(especie) ||
+    !raca || (especie==="gato" && raca!=="Gato/Felino") ||
+    typeof transporte_bolhas!=="boolean" ||
     !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(servico_id) ||
     !/^\d{4}-\d{2}-\d{2}$/.test(data_desejada) || data_desejada<minimo || data_desejada>maximo ||
-    !/^\d{8}$/.test(cep) || !rua || rua.length>180 || !numero || numero.length>20 ||
-    complemento.length>180 || bairro.length>120 || !cidade || cidade.length>120 || !/^[A-Z]{2}$/.test(uf)){
-    return respond({erro:"Confira os campos e escolha uma data entre amanhã e 30 dias à frente."},400);
+    (transporte_bolhas===true && !endOk)){
+    return respond({erro:"Confira espécie, raça, transporte e data (entre amanhã e 30 dias). Para transporte do Bolhas, informe o endereço completo."},400);
   }
 
   // Proteção contra envios repetidos por IP (sem armazenar o IP em texto puro).
@@ -85,10 +97,18 @@ Deno.serve(async (req:Request):Promise<Response>=>{
   const {data:servico,error:lookupError}=await db.from("servicos").select("id")
     .eq("id",servico_id).eq("ativo",true).maybeSingle();
   if(lookupError || !servico) return respond({erro:"O serviço selecionado não está disponível."},400);
+  const {data:validBreed,error:breedError}=await db.from("catalogo_racas")
+    .select("nome").eq("especie",especie).eq("nome",raca).maybeSingle();
+  if(breedError || !validBreed)return respond({erro:"A raça selecionada não está disponível."},400);
 
   const {error}=await db.from("solicitacoes_agendamento").insert({
-    tutor_nome,pet_nome,porte,servico_id,data_desejada,cep,rua,numero,
-    complemento:complemento||null,bairro:bairro||null,cidade,uf,status:"pendente"
+    tutor_nome,pet_nome,porte,especie,raca,transporte_bolhas,servico_id,data_desejada,
+    cep:transporte_bolhas?cep:null,rua:transporte_bolhas?rua:null,
+    numero:transporte_bolhas?numero:null,
+    complemento:transporte_bolhas?(complemento||null):null,
+    bairro:transporte_bolhas?(bairro||null):null,
+    cidade:transporte_bolhas?cidade:null,uf:transporte_bolhas?uf:null,
+    status:"pendente"
   });
   if(error){
     console.error("Erro ao criar solicitação:",error.code);

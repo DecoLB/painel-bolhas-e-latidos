@@ -1,4 +1,4 @@
-import {supabase,state,notify,esc,today} from './app.js?v=190';
+import {supabase,state,notify,esc,today} from './app.js?v=200';
 
 let solicitacoes=[], programados=new Map(), selectedDate=null, loading=false, channel=null;
 const byId=id=>document.getElementById(id);
@@ -14,8 +14,16 @@ const bookingUrl=()=>new URL('./agendamento.html',window.location.href).href;
 const statusLabels={programado:'Aguardando entrada',entrada_realizada:'Entrada realizada',recusado:'Recusado na entrada'};
 const reasonLabels={tutor_cancelou:'Tutor cancelou',nao_compareceu:'Não compareceu',coleta_nao_realizada:'Coleta não realizada',outro:'Outro'};
 const sizeLabels={pequeno:'Pequeno',medio:'Médio',grande:'Grande'};
-const addressOf=r=>[r.rua+', '+r.numero,r.complemento,r.bairro,r.cidade+' / '+r.uf,
-  'CEP '+r.cep.slice(0,5)+'-'+r.cep.slice(5)].filter(Boolean).join(' · ');
+const speciesLabel=r=>r.especie==='gato'?'Gato':r.especie==='cachorro'?'Cachorro':'Não informada';
+const breedLabel=r=>r.raca||'Não informada';
+const transportLabel=r=>r.transporte_bolhas===true?'Sim · Bolhas & Latidos':r.transporte_bolhas===false?'Não · Responsabilidade do tutor':'Não informado';
+const addressOf=r=>{
+  if(r.transporte_bolhas===false)return 'Não solicitado, transporte por conta do tutor';
+  if(!r.rua&&!r.cep)return 'Não informado';
+  return [r.rua+(r.numero?', '+r.numero:''),r.complemento,r.bairro,
+    (r.cidade||'')+(r.uf?' / '+r.uf:''),
+    r.cep?'CEP '+r.cep.slice(0,5)+'-'+r.cep.slice(5):''].filter(Boolean).join(' · ');
+};
 
 function initPrintDate(){
   const select=byId('printBookingDate'),{current,end}=ranges();
@@ -95,6 +103,8 @@ function card(r,pending){
     +'<div class="booking-card-head"><strong>'+esc(r.pet_nome)+'</strong>'+badge(stateLabel)+'</div>'
     +'<div class="booking-card-meta"><b>Tutor:</b> '+esc(r.tutor_nome)+'</div>'
     +'<div class="booking-card-meta"><b>Data:</b> '+esc(pretty(r.data_desejada))+' · <b>Porte:</b> '+esc(sizeLabels[r.porte]||r.porte)+'</div>'
+    +'<div class="booking-card-meta"><b>Espécie:</b> '+esc(speciesLabel(r))+' · <b>Raça:</b> '+esc(breedLabel(r))+'</div>'
+    +'<div class="booking-card-meta"><b>Transporte:</b> '+esc(transportLabel(r))+'</div>'
     +'<div class="booking-card-meta"><b>Serviço:</b> '+esc(serviceName(r.servico_id))+'</div>'
     +'<div class="booking-card-meta"><b>Endereço:</b> '+esc(addressOf(r))+'</div>'+actions+'</article>';
 }
@@ -126,9 +136,11 @@ function printSchedule(){
     const status=esc(statusLabels[st]||'Programado')+(st==='recusado'
       ?'<div class="booking-print-reason">'+esc(reasonLabels[prog.motivo_recusa]||'')+
         (prog.justificativa_outro?' · '+esc(prog.justificativa_outro):'')+'</div>':'');
-    return '<tr><td>'+(i+1)+'</td><td><b>'+esc(r.pet_nome)+'</b><div>'+esc(r.tutor_nome)+'</div></td>'
+    return '<tr><td>'+(i+1)+'</td><td><b>'+esc(r.pet_nome)+'</b><div>'+esc(r.tutor_nome)+'</div>'
+      +'<div>'+esc(speciesLabel(r))+' · '+esc(breedLabel(r))+'</div></td>'
       +'<td>'+esc(sizeLabels[r.porte]||r.porte)+'</td>'
       +'<td>'+esc(serviceName(r.servico_id))+'</td>'
+      +'<td>'+esc(transportLabel(r))+'</td>'
       +'<td>'+esc(addressOf(r))+'</td><td>'+status+'</td></tr>';
   }).join('');
   const sheet=byId('bookingPrintSheet');
@@ -139,9 +151,9 @@ function printSchedule(){
     +'<span>Entradas: '+counters.entrada_realizada+'</span>'
     +'<span>Recusados: '+counters.recusado+'</span></div></header>'
     +'<table class="booking-print-table"><thead><tr><th>#</th><th>Pet / Tutor</th>'
-    +'<th>Porte</th><th>Serviço</th><th>Endereço</th><th>Situação</th></tr></thead>'
-    +'<tbody>'+(rows||'<tr><td colspan="6">Nenhum agendamento aprovado nesta data.</td></tr>')+'</tbody></table>'
-    +'<footer class="booking-print-footer">Versão 1.9.0 · Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA · Relatório de programação · Impresso em '
+    +'<th>Porte</th><th>Serviço</th><th>Transporte</th><th>Endereço</th><th>Situação</th></tr></thead>'
+    +'<tbody>'+(rows||'<tr><td colspan="7">Nenhum agendamento aprovado nesta data.</td></tr>')+'</tbody></table>'
+    +'<footer class="booking-print-footer">Versão 2.0.0 · Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA · Relatório de programação · Impresso em '
     +esc(new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Sao_Paulo'}).format(new Date()))
     +'</footer>';
   sheet.hidden=false;

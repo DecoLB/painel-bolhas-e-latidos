@@ -1,10 +1,13 @@
-import {supabase,state,notify,esc,today,refresh} from './app.js?v=190';
+import {supabase,state,notify,esc,today,refresh} from './app.js?v=200';
 
 const byId=id=>document.getElementById(id);
 const plusDays=(iso,n)=>{const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
 const pretty=iso=>new Intl.DateTimeFormat('pt-BR',{dateStyle:'full',timeZone:'UTC'}).format(new Date(iso+'T12:00:00Z'));
 const labels={tutor_cancelou:'Tutor cancelou',nao_compareceu:'Não compareceu',coleta_nao_realizada:'Coleta não realizada',outro:'Outro'};
 const porteLabels={pequeno:'Pequeno',medio:'Médio',grande:'Grande'};
+const speciesLabel=r=>r.especie==='gato'?'Gato':r.especie==='cachorro'?'Cachorro':'Não informada';
+const breedLabel=r=>r.raca||'Não informada';
+const transportLabel=r=>r.transporte_bolhas===true?'Sim · Bolhas & Latidos':r.transporte_bolhas===false?'Não · Tutor':'Não informado';
 const serviceName=id=>state.services.find(s=>s.id===id)?.nome||'Serviço cadastrado';
 let bookings=[],busy=false,refreshing=false;
 
@@ -17,6 +20,8 @@ function datePicker(){
   return el.value;
 }
 function addressOf(r){
+  if(r.transporte_bolhas===false)return 'Não solicitado · transporte por conta do tutor';
+  if(!r.rua&&!r.cep)return 'Não informado';
   return [r.rua+(r.numero?', '+r.numero:''),r.complemento,r.bairro,
     (r.cidade||'')+(r.uf?' / '+r.uf:''),r.cep?'CEP '+r.cep.slice(0,5)+'-'+r.cep.slice(5):'']
     .filter(Boolean).join(' · ');
@@ -26,7 +31,7 @@ async function loadBookings(){
   refreshing=true;
   const day=datePicker();
   try{
-    const {data,error}=await supabase.rpc('listar_programacao_entrada',{p_data:day});
+    const {data,error}=await supabase.rpc('listar_programacao_entrada_v2',{p_data:day});
     if(error)throw error;
     if(byId('programacaoEntradaData').value!==day)return;
     bookings=data||[];
@@ -87,6 +92,8 @@ function render(day=datePicker()){
       '<div class="preentrada-card-head"><strong>'+esc(r.pet_nome)+'</strong>'+badge+'</div>'+
       '<div class="preentrada-detail"><b>Tutor:</b> '+esc(r.tutor_nome)+'</div>'+
       '<div class="preentrada-detail"><b>Porte:</b> '+esc(porteLabels[r.porte]||r.porte)+' · <b>Serviço:</b> '+esc(serviceName(r.servico_id))+'</div>'+
+      '<div class="preentrada-detail"><b>Espécie:</b> '+esc(speciesLabel(r))+' · <b>Raça:</b> '+esc(breedLabel(r))+'</div>'+
+      '<div class="preentrada-detail"><b>Transporte:</b> '+esc(transportLabel(r))+'</div>'+
       '<div class="preentrada-detail"><b>Data:</b> '+esc(pretty(day))+'</div>'+
       '<div class="preentrada-detail"><b>Endereço:</b> '+esc(addressOf(r))+'</div>'+footer+'</article>';
   }).join('');

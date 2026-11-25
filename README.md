@@ -1,3 +1,15 @@
+## V2.0 — Raça, espécie e transporte por solicitação
+
+- **Agendamento público**: espécie obrigatória (Cachorro ou Gato); para cães, raça escolhida no catálogo; para gatos, **Gato/Felino** automático; porte e serviço continuam obrigatórios.
+- **Transporte**: resposta obrigatória. **Sim** abre endereço para coleta (CEP com ViaCEP, rua, número, complemento, bairro, cidade, UF); **Não** avisa que o transporte é por conta do tutor, não pede e não armazena endereço.
+- **Base**: tabela `catalogo_racas` contém 71 raças caninas fornecidas pelo cliente mais `Gato/Felino`. Os dados históricos permanecem com espécie/raça/transporte **não informados**, sem inferências ou sobrescritas.
+- **Agendamento e recepção**: pedidos aprovados continuam pré-cadastrados; a RPC `listar_programacao_entrada_v2` retorna raça/espécie/transporte e preserva a RPC anterior; no dia, ao dar entrada, a transação copia os campos para `atendimentos` sem modificar a ordem da fila.
+- **Operação**: Entrada, Prestador, Telão, calendário administrativo e ficha de impressão mostram raça; os atendimentos que solicitaram transporte são identificados.
+- **Gestão**: relatório diário com espécie, raça e transporte, gráficos de atendimentos por espécie/raça e indicador de solicitações de transporte; não representa coletas realizadas.
+- **Segurança**: catálogo de raças sob RLS (leitura apenas por contas autorizadas); API pública consulta a lista via Edge Function e valida raça/espécie/endereçamento no servidor. Sem chaves privadas no navegador.
+- **Migração**: `supabase/migrations/008_especie_raca_transporte.sql`. Edge Function `supabase/functions/solicitar-agendamento/index.ts`.
+- **Compatibilidade**: solicitações existentes e relatórios anteriores não perdem dados; o endereço histórico permanece quando o transporte ainda não estava sendo registrado.
+
 # Painel Bolhas & Latidos
 
 MVP web para controle operacional de banho e tosa: entrada, fila de espera, execução, telão, administração e indicadores, sem informações financeiras.

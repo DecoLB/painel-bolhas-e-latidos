@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="./visual-v2.css?v=2">
   <link rel="stylesheet" href="./visual-v3.css?v=180">
   <link rel="stylesheet" href="./farol-v19.css?v=190">
+  <link rel="stylesheet" href="./especie-v20.css?v=200">
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -38,7 +39,7 @@
       <p id="setupInfo" class="setup-info" hidden>O banco ainda não foi conectado. Configure o projeto Supabase em config.js para habilitar o acesso.</p>
       
     </form>
-    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 1.9.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 2.0.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
   </section>
   <div id="appShell" class="shell" hidden>
     <header class="topbar">
@@ -92,6 +93,7 @@
               <article class="insight-mini"><span>Espera média</span><strong id="insightWait">—</strong><small>Atendimentos iniciados na data</small></article>
               <article class="insight-mini"><span>Profissionais em atividade</span><strong id="insightStaff">0</strong><small>Que iniciaram atendimentos na data</small></article>
               <article class="insight-mini"><span>Entradas de agendamentos</span><strong id="insightAppointments">0</strong><small>Pré-cadastros recebidos na data</small></article>
+              <article class="insight-mini"><span>Transporte Bolhas solicitado</span><strong id="insightTransport">0</strong><small>Atendimentos que informaram necessidade de transporte na data</small></article>
             </div>
             <div class="insights-details">
               <article class="panel insight-trend-panel">
@@ -109,7 +111,11 @@
             <section class="panel"><div class="panel-heading"><h2>Atendimentos por profissional</h2><p>Quantidade concluída no dia</p></div><div id="professionalsChart" class="bars"></div></section>
             <section class="panel"><div class="panel-heading"><h2>Serviços mais realizados</h2><p>Quantidade concluída no dia</p></div><div id="servicesChart" class="bars"></div></section>
           </div>
-          <section class="panel"><div class="panel-heading"><h2>Relatório diário</h2><p>Atendimentos do dia, incluindo pendentes, com duração e responsável.</p></div><div class="table-scroll"><table><thead><tr><th>Animal</th><th>Serviço</th><th>Profissional</th><th>Entrada</th><th>Início</th><th>Fim</th><th>Espera</th><th>Execução</th><th>Status</th></tr></thead><tbody id="reportTable"></tbody></table></div></section>
+          <div class="split">
+            <section class="panel"><div class="panel-heading"><h2>Raças mais atendidas</h2><p>Quantidade concluída por raça no dia selecionado</p></div><div id="breedsChart" class="bars"></div></section>
+            <section class="panel"><div class="panel-heading"><h2>Atendimentos por espécie</h2><p>Quantidade concluída por espécie no dia selecionado</p></div><div id="speciesChart" class="bars"></div></section>
+          </div>
+          <section class="panel"><div class="panel-heading"><h2>Relatório diário</h2><p>Atendimentos do dia, incluindo pendentes, com duração e responsável.</p></div><div class="table-scroll"><table><thead><tr><th>Animal</th><th>Espécie</th><th>Raça</th><th>Transporte</th><th>Serviço</th><th>Profissional</th><th>Entrada</th><th>Início</th><th>Fim</th><th>Espera</th><th>Execução</th><th>Status</th></tr></thead><tbody id="reportTable"></tbody></table></div></section>
         </div>
         <div id="admin-servicos" class="admin-panel" hidden>
           <section class="panel">
@@ -174,6 +180,10 @@
               <div class="field"><label for="animalName">Nome do animal <b>*</b></label><input id="animalName" required maxlength="120" placeholder="Nome do animal"></div>
               <div class="field"><label for="tutorName">Tutor <span>(opcional)</span></label><input id="tutorName" maxlength="150" placeholder="Nome do tutor"></div>
             </div>
+            <div class="two-col pet-characteristics">
+              <div class="field"><label for="entrySpecies">Espécie <b>*</b></label><select id="entrySpecies" required><option value="">Selecione</option><option value="cachorro">Cachorro</option><option value="gato">Gato</option></select></div>
+              <div class="field"><label for="entryBreed">Raça <b>*</b></label><select id="entryBreed" required disabled><option value="">Selecione a espécie primeiro</option></select><small class="breed-help" id="entryBreedHelp">Para gatos, será registrado Gato/Felino.</small></div>
+            </div>
             <div class="field"><label for="entryService">Serviço a realizar <b>*</b></label><select id="entryService" required><option value="">Selecione um serviço</option></select></div>
             <div class="field"><label for="isScheduled">Serviço agendado? <b>*</b></label><select id="isScheduled" required><option value="">Selecione</option><option value="sim">Sim</option><option value="nao">Não</option></select></div>
             <div id="scheduledTimeField" class="field" hidden><label for="scheduledTime">Horário agendado <b>*</b></label><input id="scheduledTime" type="time"></div>
@@ -195,15 +205,15 @@
         <div class="page-heading no-print"><div><span class="eyebrow">PAINEL OPERACIONAL</span><h1>Visão do telão</h1><p>Exibição contínua das filas de atendimento.</p></div><button id="fullscreenBtn" type="button" class="btn btn-outline">Tela cheia</button></div>
         <div class="tv-header"><div class="brand"><img class="brand-logo" src="./assets/logo.webp" alt="Logo Bolhas & Latidos" onerror="this.hidden=true"><span class="brand-fallback">Bolhas <em>&</em> Latidos</span></div><div class="tv-now" id="tvClock"></div></div>
         <div class="tv-grid" id="tvGrid" data-density="single"><div class="tv-column farol-warning"><h2>Aguardando <span id="tvWaitingCount">0</span></h2><div id="tvWaiting" class="tv-list"></div></div><div class="tv-column farol-success"><h2>Em execução <span id="tvActiveCount">0</span></h2><div id="tvActive" class="tv-list"></div></div></div>
-        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 1.9.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 2.0.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
       </section>
     </main>
-    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 1.9.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
+    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 2.0.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
   </div>
   <section id="bookingPrintSheet" hidden aria-label="Ficha de programação para impressão"></section>
   <script src="./config.js?v=20261125-2"></script>
-  <script type="module" src="./app.js?v=190"></script>
-  <script type="module" src="./agendamento-admin.js?v=190"></script>
-  <script type="module" src="./programacao-entrada.js?v=190"></script>
+  <script type="module" src="./app.js?v=200"></script>
+  <script type="module" src="./agendamento-admin.js?v=200"></script>
+  <script type="module" src="./programacao-entrada.js?v=200"></script>
 </body>
 </html>

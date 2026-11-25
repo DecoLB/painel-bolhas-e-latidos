@@ -7,6 +7,42 @@ const addDays=(iso,n)=>{const d=new Date(iso+"T12:00:00Z");d.setUTCDate(d.getUTC
 const pretty=iso=>new Intl.DateTimeFormat("pt-BR",{timeZone:"UTC",day:"2-digit",month:"long",year:"numeric",weekday:"long"}).format(new Date(iso+"T12:00:00Z"));
 const weekday=iso=>new Intl.DateTimeFormat("pt-BR",{weekday:"short",timeZone:"UTC"}).format(new Date(iso+"T12:00:00Z")).replace(".","");
 const dateLabel=iso=>iso.slice(8,10)+"/"+iso.slice(5,7);
+let racas=[];
+const addressIds=["cep","rua","numero","complemento","bairro","cidade","uf"];
+const requiredAddressIds=["cep","rua","numero","cidade","uf"];
+function updateSpecies(){
+  const specie=byId("especiePet").value,select=byId("racaPet");
+  select.innerHTML='<option value="">Selecione a raça</option>';
+  if(specie==="gato"){
+    select.innerHTML='<option value="Gato/Felino">Gato/Felino</option>';
+    select.value="Gato/Felino";select.disabled=true;
+    byId("racaMessage").textContent="Gato/Felino identificado automaticamente.";
+  }else if(specie==="cachorro"){
+    select.disabled=false;
+    for(const item of racas.filter(r=>r.especie==="cachorro")){
+      const opt=document.createElement("option");opt.value=item.nome;opt.textContent=item.nome;select.append(opt);
+    }
+    byId("racaMessage").textContent="Selecione uma das raças cadastradas.";
+  }else{
+    select.disabled=true;byId("racaMessage").textContent="Selecione primeiro a espécie do pet.";
+  }
+}
+function updateTransport(){
+  const mode=byId("transporteBolhas").value;
+  const show=mode==="sim";
+  byId("transportAddressSection").hidden=!show;
+  byId("transportMessage").textContent=show?
+    "Informe o endereço de coleta do pet para o transporte do Bolhas & Latidos.":
+    mode==="nao"?"Sem transporte do Bolhas & Latidos: o transporte é por conta do tutor.":
+    "Selecione uma opção para informar como o pet chegará ao atendimento.";
+  for(const id of addressIds){
+    const field=byId(id);field.disabled=!show;field.required=show&&requiredAddressIds.includes(id);
+    if(!show)field.value="";
+  }
+  if(!show){++cepLoad;byId("cepMessage").textContent="Ao digitar 8 números, buscaremos o endereço.";}
+}
+byId("especiePet").addEventListener("change",updateSpecies);
+byId("transporteBolhas").addEventListener("change",updateTransport);
 function error(message){byId("publicError").textContent=message;byId("publicError").hidden=false;byId("publicError").scrollIntoView({behavior:"smooth",block:"nearest"});}
 function clearError(){byId("publicError").hidden=true;}
 function renderCalendar(){
@@ -36,7 +72,8 @@ async function loadServices(){
   try{
     const res=await fetch(endpoint,{method:"GET",cache:"no-store"});
     const data=await res.json();
-    if(!res.ok || !Array.isArray(data.servicos))throw Error(data.erro||"Não foi possível consultar os serviços.");
+    if(!res.ok || !Array.isArray(data.servicos)||!Array.isArray(data.racas))throw Error(data.erro||"Não foi possível consultar os serviços e raças.");
+    racas=data.racas;updateSpecies();
     select.innerHTML='<option value="">Selecione o serviço</option>';
     for(const s of data.servicos){
       const o=document.createElement("option");o.value=s.id;o.textContent=s.nome;select.append(o);
@@ -47,7 +84,7 @@ async function loadServices(){
 let cepLoad=0;
 async function lookupCep(){
   const cep=byId("cep").value.replace(/\D/g,"").slice(0,8);
-  if(cep.length!==8)return;
+  if(cep.length!==8 || byId("transporteBolhas").value!=="sim")return;
   const current=++cepLoad;
   const msg=byId("cepMessage");msg.textContent="Consultando CEP...";
   try{
@@ -65,11 +102,18 @@ async function lookupCep(){
   }catch(e){if(current!==cepLoad)return;msg.textContent=e.message+" Você pode preencher manualmente."; }
 }
 function values(){
+  const transport=byId("transporteBolhas").value==="sim";
   return {tutor_nome:byId("tutorNome").value.trim(),pet_nome:byId("petNome").value.trim(),
+    especie:byId("especiePet").value,
+    raca:byId("especiePet").value==="gato"?"Gato/Felino":byId("racaPet").value,
     porte:byId("portePet").value,servico_id:byId("servicoPet").value,data_desejada:byId("desiredDate").value,
-    cep:byId("cep").value.replace(/\D/g,""),rua:byId("rua").value.trim(),numero:byId("numero").value.trim(),
-    complemento:byId("complemento").value.trim(),bairro:byId("bairro").value.trim(),
-    cidade:byId("cidade").value.trim(),uf:byId("uf").value.trim().toUpperCase(),website:byId("website").value};
+    transporte_bolhas:transport,
+    cep:transport?byId("cep").value.replace(/\D/g,""):null,
+    rua:transport?byId("rua").value.trim():null,numero:transport?byId("numero").value.trim():null,
+    complemento:transport?byId("complemento").value.trim():null,
+    bairro:transport?byId("bairro").value.trim():null,
+    cidade:transport?byId("cidade").value.trim():null,
+    uf:transport?byId("uf").value.trim().toUpperCase():null,website:byId("website").value};
 }
 byId("cep").addEventListener("input",()=>{
   const v=byId("cep").value.replace(/\D/g,"").slice(0,8);
@@ -81,6 +125,12 @@ byId("bookingForm").addEventListener("submit",async event=>{
   const iso=byId("desiredDate").value,hoje=dateIso();
   if(!iso || iso<addDays(hoje,1) || iso>addDays(hoje,30)){error("Selecione uma data entre amanhã e os próximos 30 dias.");return;}
   if(!byId("bookingForm").reportValidity())return;
+  if(!byId("especiePet").value || (byId("especiePet").value==="cachorro"&&!byId("racaPet").value)){
+    error("Selecione a espécie e a raça do pet.");return;
+  }
+  if(!["sim","nao"].includes(byId("transporteBolhas").value)){
+    error("Informe se precisa de transporte do Bolhas & Latidos.");return;
+  }
   const button=byId("sendBooking");button.disabled=true;button.textContent="Enviando solicitação...";
   try{
     const res=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(values())});
@@ -91,9 +141,11 @@ byId("bookingForm").addEventListener("submit",async event=>{
   finally{button.disabled=false;button.textContent="Enviar solicitação de agendamento";}
 });
 byId("newBooking").addEventListener("click",()=>{
-  byId("bookingForm").reset();byId("desiredDate").value="";renderCalendar();
+  byId("bookingForm").reset();byId("desiredDate").value="";renderCalendar();updateSpecies();updateTransport();
   byId("bookingSuccess").hidden=true;byId("requestCard").hidden=false;clearError();
   byId("requestCard").scrollIntoView({behavior:"smooth",block:"start"});
 });
 renderCalendar();
+updateTransport();
+updateSpecies();
 loadServices();
