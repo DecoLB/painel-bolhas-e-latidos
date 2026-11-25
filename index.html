@@ -62,6 +62,7 @@
           <button type="button" class="subnav-item active" data-admin-tab="gerencial">Visão gerencial</button>
           <button type="button" class="subnav-item" data-admin-tab="servicos">Serviços</button>
           <button type="button" class="subnav-item" data-admin-tab="profissionais">Profissionais</button>
+          <button type="button" class="subnav-item" data-admin-tab="agendamentos">Calendário <span id="bookingTabCount" class="booking-tab-count" hidden>0</span></button>
         </div>
         <div id="admin-gerencial" class="admin-panel">
           <div class="toolbar no-print"><label for="reportDate">Data de referência</label><input type="date" id="reportDate"><button class="btn btn-outline" id="printBtn" type="button">Imprimir relatório diário</button></div>
@@ -90,6 +91,29 @@
             <form id="professionalForm" class="inline-form"><input id="professionalCode" aria-label="Sigla" required maxlength="12" placeholder="Sigla"><input id="professionalName" aria-label="Nome completo" required maxlength="100" placeholder="Nome do profissional"><button class="btn btn-primary">Cadastrar profissional</button></form>
             <div id="professionalsList" class="entity-list"></div>
           </section>
+        </div>
+        <div id="admin-agendamentos" class="admin-panel" hidden>
+          <section class="panel">
+            <div class="panel-heading appointment-heading">
+              <div><h2>Calendário de agendamentos</h2><p>Próximos 30 dias, a partir de amanhã. Pedidos pendentes aguardam aprovação.</p></div>
+              <div class="appointment-links">
+                <a class="btn btn-outline" target="_blank" rel="noopener" href="./agendamento.html">Abrir formulário público</a>
+                <button type="button" class="btn btn-primary" id="copyBookingLink">Copiar link para o tutor</button>
+              </div>
+            </div>
+            <div class="booking-legend"><span><i class="legend-dot pending"></i> Pendente de análise</span><span><i class="legend-dot approved"></i> Aprovado e programado</span></div>
+            <div class="appointment-calendar" id="bookingCalendar" aria-label="Calendário de solicitações dos próximos 30 dias"></div>
+          </section>
+          <div class="split appointment-lists">
+            <section class="panel">
+              <div class="panel-heading"><h2>Solicitações para análise <span class="count-pill" id="bookingPendingCount">0</span></h2><p id="bookingSelectedFilter">Próximos 30 dias</p></div>
+              <div id="bookingPendingList" class="booking-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-heading"><h2>Programação aprovada <span class="count-pill approved" id="bookingApprovedCount">0</span></h2><p>Pedidos já aprovados, sem entrada automática na fila de atendimento.</p></div>
+              <div id="bookingApprovedList" class="booking-list"></div>
+            </section>
+          </div>
         </div>
       </section>
       <section id="page-entrada" class="page" hidden>
