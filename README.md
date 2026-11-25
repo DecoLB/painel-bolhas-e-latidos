@@ -13,7 +13,7 @@ MVP web para controle operacional de banho e tosa: entrada, fila de espera, exec
 3. Cadastre o UID no SQL Editor: `insert into public.app_admins (user_id) values ('UUID_DO_USUARIO');`
 4. Copie `config.example.js` para `config.js` e preencha SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY. A chave publishable é pública; **nunca** coloque service_role/secret key no repositório.
 5. Faça commit de `config.js` somente com a URL e a chave publicável. Ative GitHub Pages no branch `main`, pasta `/ (root)`.
-6. Coloque a arte **original** do cliente em `assets/logo.png` (PNG transparente recomendado). Até essa etapa, o sistema exibe o nome da marca como fallback e cores provisórias.
+6. Coloque a arte **original** do cliente em `assets/Logo.jpeg` (PNG transparente recomendado). Até essa etapa, o sistema exibe o nome da marca como fallback e cores provisórias.
 7. Teste com o administrador autorizado: login, criação, captura de foto, início, finalização, atualização em outra aba e relatório.
 
 ## Retenção de 7 dias
