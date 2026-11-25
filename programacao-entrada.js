@@ -163,3 +163,4 @@ window.addEventListener('bolhas:authenticated',()=>{if(permitted())loadBookings(
 supabase?.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'){bookings=[];byId('programacaoEntradaList').innerHTML='';}});
 setInterval(()=>{if(permitted() && !byId('page-entrada').hidden)loadBookings();},30000);
 datePicker();
+if(permitted() && !byId("page-entrada").hidden)loadBookings();
