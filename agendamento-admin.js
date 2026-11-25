@@ -1,4 +1,4 @@
-import {supabase,state,notify,esc,today} from './app.js';
+import {supabase,state,notify,esc,today} from './app.js?v=190';
 
 let solicitacoes=[], programados=new Map(), selectedDate=null, loading=false, channel=null;
 const byId=id=>document.getElementById(id);
@@ -82,16 +82,17 @@ function render(){
 function card(r,pending){
   const prog=programados.get(r.id);
   const status=prog?.status||'programado';
-  const stateLabel=pending?'⏳ Aguardando análise':status==='recusado'?'✕ Recusado':status==='entrada_realizada'?'✓ Entrada registrada':'✓ Aprovado';
-  const badgeColor=pending?'warn':status==='recusado'?'off':'done';
+  const stateLabel=pending?'Aguardando análise':status==='recusado'?'Recusado':status==='entrada_realizada'?'Entrada registrada':'Aprovado';
+  const badgeColor=pending?'warning':status==='recusado'?'danger':'success';
+  const badge=(label)=>'<span class="tag farol-tag status-'+badgeColor+'"><span class="farol-dot" aria-hidden="true"></span>'+esc(label)+'</span>';
   const actions=pending
     ? '<div class="booking-actions"><button type="button" class="btn btn-primary" data-approve-booking="'+esc(r.id)+'">✓ Aprovar</button>'
       +'<button type="button" class="btn btn-danger" data-reject-booking="'+esc(r.id)+'">✕ Recusar</button></div>'
-    : '<div class="booking-status-foot"><span class="tag '+badgeColor+'">'+esc(statusLabels[status]||'Programado')+'</span>'
+    : '<div class="booking-status-foot">'+badge(statusLabels[status]||'Programado')
       +(status==='recusado'?'<small>Justificativa: '+esc(reasonLabels[prog.motivo_recusa]||'')+
         (prog.justificativa_outro?' · '+esc(prog.justificativa_outro):'')+'</small>':'')+'</div>';
-  return '<article class="booking-card">'
-    +'<div class="booking-card-head"><strong>'+esc(r.pet_nome)+'</strong><span class="tag '+badgeColor+'">'+stateLabel+'</span></div>'
+  return '<article class="booking-card farol-card farol-'+badgeColor+'">'
+    +'<div class="booking-card-head"><strong>'+esc(r.pet_nome)+'</strong>'+badge(stateLabel)+'</div>'
     +'<div class="booking-card-meta"><b>Tutor:</b> '+esc(r.tutor_nome)+'</div>'
     +'<div class="booking-card-meta"><b>Data:</b> '+esc(pretty(r.data_desejada))+' · <b>Porte:</b> '+esc(sizeLabels[r.porte]||r.porte)+'</div>'
     +'<div class="booking-card-meta"><b>Serviço:</b> '+esc(serviceName(r.servico_id))+'</div>'
