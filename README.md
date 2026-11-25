@@ -11,7 +11,7 @@ MVP web para controle operacional de banho e tosa: entrada, fila de espera, exec
 - **Pendente:** adicionar `assets/Logo.jpeg` enviado pelo cliente; arquivo ainda não existe no GitHub.
 - **Pendente:** concluir e testar agendamento seguro da limpeza automática e validar funcionamento ponta a ponta.
 - Publicação GitHub Pages validada e homologação básica do fluxo Entrada → Prestador → Telão → Gerencial concluída.
-- **Pendente:** criação e associação da conta única operacional no Supabase Auth.
+- Conta operacional única criada e vinculada à tabela `app_operadores` (separada do administrador).
 
 ## Tecnologias
 - HTML, CSS e JavaScript sem build.
@@ -33,6 +33,20 @@ MVP web para controle operacional de banho e tosa: entrada, fila de espera, exec
 - O sistema não libera a conta apenas por ter um login válido no Supabase: é obrigatório pertencer a um dos perfis.
 - Para cadastrar a conta operacional, crie uma nova conta em Supabase Authentication > Users, com e-mail distinto do administrador e senha forte; em seguida vincule o UID na tabela `app_operadores`.
 - A tabela `app_operadores` permite no máximo **um usuário** por vez; não compartilhe a senha do administrador com os colaboradores.
+
+## Agendamento público e calendário (V1.5)
+
+**Link público para tutores:** https://decolb.github.io/painel-bolhas-e-latidos/agendamento.html
+
+- Sem login: tutor, pet, porte, serviço cadastrado ativo, data D+1 até D+30, CEP com ViaCEP, rua, número, complemento, bairro, cidade e UF.
+- O tutor recebe a confirmação **da solicitação** na tela, não a confirmação da reserva. Sem contato telefônico/e-mail no formulário (conforme escopo), a resposta posterior precisa ser organizada pela equipe fora do sistema.
+- Endpoint `solicitar-agendamento`: GET retorna apenas serviços ativos; POST recebe pedido pendente com validação de dados, limite básico por origem/IP e sem exposição da service role.
+- Administração: guia Calendário apresenta os 30 dias permitidos, com ícones de pedidos pendentes e aprovados. Aprovar grava o vínculo em `programacao` em transação atômica; recusar exclui a solicitação.
+- Programar não equivale a registrar chegada: entrada presencial continua obrigatória para passar à fila operacional.
+- Apenas a conta de administrador pode ler nomes e endereços dos tutores; usuário operacional e público não têm acesso aos dados de agendamentos.
+- Retenção: solicitações futuras são conservadas até a data prevista e por mais 7 dias; pedido recusado é excluído imediatamente; `pg_cron` executa a limpeza diariamente às 00:10 de Brasília (03:10 UTC). Isso é uma exceção necessária à janela de 30 dias.
+- **Limite de segurança:** o anti-spam atual é básico e não substitui CAPTCHA/Turnstile para grande exposição pública.
+- Edge Function e migrações: `supabase/migrations/003_agendamentos_publicos.sql`, `supabase/migrations/004_limpeza_agendamentos_cron.sql` e `supabase/functions/solicitar-agendamento/index.ts`.
 
 ## Retenção de 7 dias
 A função `supabase/functions/retencao-7-dias/index.ts` implementa remoção de fotos e dados antigos; **não entra em funcionamento automaticamente só pelo commit**. Para ativar, implante a função, configure `CRON_SECRET` via secrets do Supabase, e agende uma chamada autenticada no Supabase Cron (por exemplo 03:10 UTC = 00:10 em Brasília). O SQL `supabase/retencao-cron-exemplo.sql` contém o exemplo, com segredos no Vault. Após publicar, execute uma chamada de teste controlada, verifique logs e confirme eliminação na Storage + banco. Registros ainda aguardando ou em execução ficam preservados até a conclusão; são exceções documentadas da regra de limpeza.
