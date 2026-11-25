@@ -22,16 +22,16 @@
       <p>Seu painel de entrada, execução e gestão de serviços.</p>
     </div>
     <form id="loginForm" class="login-card">
-      <span class="eyebrow">ACESSO ADMINISTRATIVO</span>
+      <span class="eyebrow">ACESSO AO PAINEL</span>
       <h2>Bem-vindo de volta</h2>
-      <p class="muted">Entre com o acesso do administrador para liberar as telas.</p>
+      <p class="muted">Entre com seu acesso autorizado ao painel.</p>
       <label for="email">E-mail</label>
       <input id="email" name="email" type="email" autocomplete="username" required placeholder="administrador@exemplo.com">
       <label for="password">Senha</label>
       <input id="password" name="password" type="password" autocomplete="current-password" required minlength="6" placeholder="Sua senha">
       <button id="loginBtn" class="btn btn-primary btn-wide" type="submit">Entrar no painel <span>→</span></button>
       <p id="setupInfo" class="setup-info" hidden>O banco ainda não foi conectado. Configure o projeto Supabase em config.js para habilitar o acesso.</p>
-      <p class="micro">Acesso exclusivo do administrador · Sem contas individuais de colaboradores</p>
+      <p class="micro">Dois perfis: Administrador e Operacional</p>
     </form>
   </section>
   <div id="appShell" class="shell" hidden>
@@ -41,13 +41,13 @@
         <span class="brand-fallback">Bolhas <em>&</em> Latidos</span>
       </div>
       <div class="header-meta">
-        <span id="connectionPill" class="connection-pill">Conectando...</span>
+        <span id="connectionPill" class="connection-pill">Conectando...</span><span id="rolePill" class="tag">—</span>
         <span id="clock" class="clock"></span>
         <button type="button" id="logoutBtn" class="btn btn-ghost">Sair</button>
       </div>
     </header>
     <nav class="nav" aria-label="Navegação principal">
-      <button type="button" class="nav-item active" data-page="admin">◫ <span>Administrador</span></button>
+      <button type="button" id="adminNav" class="nav-item active" data-page="admin">◫ <span>Administrador</span></button>
       <button type="button" class="nav-item" data-page="entrada">✚ <span>Entrada</span></button>
       <button type="button" class="nav-item" data-page="prestador">✂ <span>Prestador</span></button>
       <button type="button" class="nav-item" data-page="telao">▣ <span>Telão</span></button>
