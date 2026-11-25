@@ -148,8 +148,10 @@ input:disabled,select:disabled,button:disabled{cursor:not-allowed}
   color:#1B1918;letter-spacing:-.035em;overflow-wrap:anywhere;margin-bottom:2px
 }
 #page-telao .tv-data-line{display:flex;align-items:baseline;gap:6px 9px;min-width:0;flex-wrap:wrap;font-size:clamp(11px,.95vw,15px);line-height:1.2}
-#page-telao .tv-data-line>span{font-size:.9em;color:#6D6159;font-weight:600}
-#page-telao .tv-data-line>strong{color:#2D2520;font-weight:900;overflow-wrap:anywhere}
+/* O rótulo (Serviço, Entrada, Responsável) recebe o negrito.
+   O valor é texto de contexto e não herda a tipografia grande do nome do pet. */
+#page-telao .tv-data-line>span{font-size:clamp(12px,1vw,16px);color:#29221E;font-weight:900}
+#page-telao #tvGrid .tv-card .tv-data-line>strong{font-size:clamp(12px,1.05vw,16px);font-weight:500;line-height:1.35;letter-spacing:normal;color:#554B44;overflow-wrap:anywhere}
 #page-telao .tv-status{font-weight:900;font-size:clamp(10px,.9vw,13px);padding:4px 9px;margin-top:2px}
 #page-telao .tv-list>.empty{min-height:125px}
 #page-telao .tv-card .tv-photo:not(:has(img)){font-size:24px;color:#A74800}
