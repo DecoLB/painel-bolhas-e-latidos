@@ -48,6 +48,20 @@ MVP web para controle operacional de banho e tosa: entrada, fila de espera, exec
 - **Limite de segurança:** o anti-spam atual é básico e não substitui CAPTCHA/Turnstile para grande exposição pública.
 - Edge Function e migrações: `supabase/migrations/003_agendamentos_publicos.sql`, `supabase/migrations/004_limpeza_agendamentos_cron.sql` e `supabase/functions/solicitar-agendamento/index.ts`.
 
+## V1.6 — Pré-entrada da programação aprovada e ficha diária
+
+- **Solicitação aprovada:** aparece em Administração → Calendário e como **pré-cadastro** na Entrada. Não aparece no Prestador/Telão antes do registro de entrada.
+- **Prévia futura:** a equipe escolhe a data em Entrada, de hoje até D+30, e visualiza pet, tutor, porte, serviço e endereço. Não pode movimentar agendamentos de dias futuros.
+- **No dia programado:** funcionário autorizado clica em **Dar entrada**. A RPC cria um único atendimento `aguardando`, vincula a solicitação, copia todos os campos solicitados e registra a decisão. Não atribui automaticamente um prestador.
+- **Recusa na data:** somente se a programação estiver `programado`. Justificativas obrigatórias: `tutor_cancelou`, `nao_compareceu`, `coleta_nao_realizada`, `outro`. Para `outro`, texto entre 1 e 200 caracteres. Recusas ficam disponíveis na programação para acompanhamento e impressão, sem criar atendimento.
+- **Dois tipos distintos de recusa:** recusa de solicitação pendente pelo administrador elimina a solicitação; recusa operacional de programação já aprovada registra motivo, responsável e horário.
+- **Impressão:** Administração → Calendário → escolher data de hoje até D+30 → **Imprimir programação do dia**. A ficha A4 contém pet, tutor, porte, serviço, endereço, estado da entrada e justificativa quando houver. Nunca inclui valores financeiros.
+- **Segurança:** RLS conserva os pedidos pendentes exclusivos do administrador; uma RPC aprovada para administrador/operacional expõe apenas a programação já aprovada dentro da janela de hoje a D+30. Mutação somente por RPCs transacionais autenticadas com bloqueio de linha.
+- **Retenção:** `atendimentos.agendamento_id` aponta à solicitação aprovada. Exclusões da política de sete dias removem o vínculo sem causar erro em `programacao`; a programação é apagada na rotina própria após a data+7.
+- SQL: `supabase/migrations/006_checkin_programacao_e_recusa.sql` e `supabase/migrations/007_ajuste_fk_retencao_programacao.sql`.
+- Testes: RPC de prévia operacional do agendamento real de 28/11, check-in e recusa sob transação revertida, bloqueio de check-in futuro, recusa com Outro, prevenção de check-in duplo e exclusão de atendimento após retenção.
+- **Pendente:** confirmar a experiência no navegador e a impressão em A4 nos dispositivos reais; entrada e recusa do agendamento de 28/11 só poderão ser acionadas em 28/11 (horário de Brasília).
+
 ## Retenção de 7 dias
 A função `supabase/functions/retencao-7-dias/index.ts` implementa remoção de fotos e dados antigos; **não entra em funcionamento automaticamente só pelo commit**. Para ativar, implante a função, configure `CRON_SECRET` via secrets do Supabase, e agende uma chamada autenticada no Supabase Cron (por exemplo 03:10 UTC = 00:10 em Brasília). O SQL `supabase/retencao-cron-exemplo.sql` contém o exemplo, com segredos no Vault. Após publicar, execute uma chamada de teste controlada, verifique logs e confirme eliminação na Storage + banco. Registros ainda aguardando ou em execução ficam preservados até a conclusão; são exceções documentadas da regra de limpeza.
 
