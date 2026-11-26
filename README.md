@@ -1,3 +1,11 @@
+## Correção de permissão de entrada — 26/11/2026
+
+- **Incidente:** `permission denied for table atendimentos` ao registrar animal.
+- **Causa:** `authenticated` não possuía `INSERT` na tabela, apesar das políticas RLS permitirem Administrador e Operacional.
+- **Correção:** concedido `INSERT` para `authenticated` e removidas as permissões de `anon` da tabela. As políticas RLS de `app_admins` e `app_operadores` foram preservadas.
+- **Testes:** inserção simulada pelas duas contas Administrador e pelo Operacional passou; conta sem vínculo e inclusão indevida diretamente em execução foram bloqueadas. Todos os testes transacionais foram revertidos, sem dados fictícios.
+- **Arquivo de referência:** `supabase/migrations/011_fix_registro_pet_permissoes.sql`. Ajuste da base já aplicado no Supabase.
+
 ## V2.1.1 — Escopo de aplicação da tabela recebida (26/11/2026)
 
 - **Única classe com valores comprovados:** P = **cães com peso até 10 kg**. A tabela recebida de quatro serviços × três pelagens (12 valores) já estava vinculada à espécie `cachorro` e ao porte `pequeno`.
