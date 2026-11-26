@@ -1,3 +1,25 @@
+## V2.2.0 — Produção e valores gerenciais (Administrador)
+
+**Objetivo:** medir produção estimada, produtividade por profissional, mix de serviços, adicionais e eficiência de atendimento. O painel é exclusivamente administrativo; **não representa faturamento realizado, cobrança ou lucro**.
+
+### Métricas e critérios
+
+- Filtros por **hoje**, **últimos 7 dias** e **período personalizado de até 7 dias**, profissional, serviço e cobertura da precificação.
+- KPIs: valor estimado dos atendimentos com preço fechado, total concluído, ticket médio estimado, cobertura de precificação, tempo médio de execução, espera média, subtotal parcial separado e quantidade sem preço integral.
+- Rankings: **valor estimado associado ao profissional** (somente atendimentos completamente precificados), volume concluído por profissional, serviços mais executados, valor estimado por serviço principal, adicionais mais selecionados e tempo médio de execução por profissional.
+- Evolução diária com rótulos de quantidades e valores. Tabela detalhada de auditoria e exportação **CSV** com os filtros aplicados.
+- **Métrica de valor:** snapshot em `public.producao_valores` criado **no momento da conclusão** e mantido imutável quando o Administrador altera preços posteriores.
+- **Preço completo**: tabela base aplicável e todos os adicionais com valores fixos, sem transporte sob consulta.
+- **Parcial**: preço base existe, mas há valor "a partir de", serviço adicional sob consulta ou transporte a confirmar. Subtotal conhecido mostrado separadamente e **não entra no ranking de valores fechados**.
+- **Sem tabela**: combinação sem preço aplicável (por exemplo M/G, gatos e raças especiais não classificadas). **Sem dados**: espécie, porte ou pelagem não informados.
+- **Dados históricos:** concluídos anteriores à implantação recebem origem `retroativo`. Dados de porte/pelagem ausentes permanecem sem valor monetário atribuído; não há inferência retrospectiva. O controle financeiro está sujeito à retenção do atendimento: exclusão após 7 dias remove também o snapshot pelo relacionamento `ON DELETE CASCADE`.
+- **Não há recebimentos cadastrados:** em nenhuma parte deve ser usado o nome "receita recebida", "faturamento realizado" ou "lucro" para estes totais.
+- **Manejo**: informativo, sem cobrança inferida. Não extrapolar preços P para M/G, gatos ou raças especiais.
+- **Entrada manual:** porte e pelagem obrigatórios para permitir precificação de futuros registros; histórico preservado.
+- **Segurança:** tabela `producao_valores` protegida por RLS, leitura somente para `app_admins` e gravação automatizada via trigger privado. Nenhuma coluna de dinheiro foi adicionada a `atendimentos`, que é compartilhada com o Operacional. Perfis Operacionais não podem consultar a tabela financeira.
+- **Migração:** `supabase/migrations/012_producao_valores_admin.sql`.
+- **Arquivos:** `producao-admin.js`, `producao-v22.css`, `index.html` e `app.js`.
+
 ## Correção de permissão de entrada — 26/11/2026
 
 - **Incidente:** `permission denied for table atendimentos` ao registrar animal.

@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="./farol-v19.css?v=190">
   <link rel="stylesheet" href="./especie-v20.css?v=200">
   <link rel="stylesheet" href="./comercial-v21.css?v=210">
+  <link rel="stylesheet" href="./producao-v22.css?v=220">
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -40,7 +41,7 @@
       <p id="setupInfo" class="setup-info" hidden>O banco ainda não foi conectado. Configure o projeto Supabase em config.js para habilitar o acesso.</p>
       
     </form>
-    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 2.1.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 2.2.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
   </section>
   <div id="appShell" class="shell" hidden>
     <header class="topbar">
@@ -68,6 +69,7 @@
         </div>
         <div class="subnav">
           <button type="button" class="subnav-item active" data-admin-tab="gerencial">Visão gerencial</button>
+          <button type="button" class="subnav-item" data-admin-tab="producao">Produção &amp; Valores</button>
           <button type="button" class="subnav-item" data-admin-tab="servicos">Serviços e preços</button>
           <button type="button" class="subnav-item" data-admin-tab="profissionais">Profissionais</button>
           <button type="button" class="subnav-item" data-admin-tab="agendamentos">Calendário <span id="bookingTabCount" class="booking-tab-count" hidden>0</span></button>
@@ -117,6 +119,74 @@
             <section class="panel"><div class="panel-heading"><h2>Atendimentos por espécie</h2><p>Quantidade concluída por espécie no dia selecionado</p></div><div id="speciesChart" class="bars"></div></section>
           </div>
           <section class="panel"><div class="panel-heading"><h2>Relatório diário</h2><p>Atendimentos do dia, incluindo pendentes, com duração e responsável.</p></div><div class="table-scroll"><table><thead><tr><th>Animal</th><th>Espécie</th><th>Raça</th><th>Transporte</th><th>Serviço</th><th>Adicionais</th><th>Manejo</th><th>Profissional</th><th>Entrada</th><th>Início</th><th>Fim</th><th>Espera</th><th>Execução</th><th>Status</th></tr></thead><tbody id="reportTable"></tbody></table></div></section>
+        </div>
+        <div id="admin-producao" class="admin-panel" hidden>
+          <section class="prod-heading">
+            <div>
+              <span class="eyebrow">INTELIGÊNCIA GERENCIAL · ACESSO RESTRITO</span>
+              <h2>Produção e valores associados</h2>
+              <p>Valores de referência dos atendimentos concluídos, calculados com a tabela vigente na conclusão. <strong>Não representam faturamento recebido, cobrança ou lucro.</strong></p>
+            </div>
+            <span class="tag farol-tag status-neutral"><span class="farol-dot" aria-hidden="true"></span>Somente Administrador</span>
+          </section>
+          <div class="prod-disclaimer"><strong>Governança:</strong> valores completos somente quando há preço fechado para o serviço e todos os adicionais aplicáveis. Estimativas parciais, transporte e combinações sem tabela ficam separados do total. Histórico disponível conforme retenção operacional de até 7 dias.</div>
+          <div class="prod-toolbar no-print">
+            <label>Período
+              <select id="prodPeriod">
+                <option value="7">Últimos 7 dias</option>
+                <option value="1">Hoje</option>
+                <option value="custom">Personalizado</option>
+              </select>
+            </label>
+            <div id="prodCustomDates" class="prod-custom-dates" hidden>
+              <label>Início<input type="date" id="prodStartDate"></label>
+              <label>Fim<input type="date" id="prodEndDate"></label>
+            </div>
+            <label>Profissional<select id="prodProfessional"><option value="">Todos os profissionais</option></select></label>
+            <label>Serviço<select id="prodService"><option value="">Todos os serviços</option></select></label>
+            <label>Situação da precificação
+              <select id="prodCoverage">
+                <option value="">Todas</option>
+                <option value="completo">Preço fechado</option>
+                <option value="parcial">Estimativa parcial</option>
+                <option value="sob_consulta">Sem tabela / sob consulta</option>
+                <option value="sem_dados">Dados insuficientes</option>
+              </select>
+            </label>
+            <button type="button" id="prodRefresh" class="btn btn-primary">Atualizar indicadores</button>
+            <button type="button" id="prodCsv" class="btn btn-outline">Exportar CSV</button>
+          </div>
+          <p id="prodMessage" class="prod-message" role="status" aria-live="polite">Carregue o painel para consultar a produção.</p>
+          <div class="prod-kpi-grid">
+            <article class="prod-kpi"><span>Produção estimada com preço fechado</span><strong id="prodTotal">—</strong><small>Somente atendimentos concluídos e integralmente precificados</small></article>
+            <article class="prod-kpi"><span>Atendimentos concluídos</span><strong id="prodCompleted">—</strong><small>Contabilizados na seleção</small></article>
+            <article class="prod-kpi"><span>Ticket médio estimado</span><strong id="prodTicket">—</strong><small>Somente atendimentos com preço fechado</small></article>
+            <article class="prod-kpi"><span>Cobertura de precificação</span><strong id="prodCoveragePct">—</strong><small id="prodCoverageDetail">Atendimentos com preço integral / total concluído</small></article>
+            <article class="prod-kpi"><span>Tempo médio de execução</span><strong id="prodExecution">—</strong><small>Conclusões com início e fim registrados</small></article>
+            <article class="prod-kpi"><span>Espera média até início</span><strong id="prodWait">—</strong><small>Conclusões com entrada e início registrados</small></article>
+            <article class="prod-kpi"><span>Subtotal identificado, mas não fechado</span><strong id="prodPartial">—</strong><small>Estimativas parciais, excluídas da produção com preço fechado</small></article>
+            <article class="prod-kpi"><span>Atendimentos sem preço integral</span><strong id="prodUnpriced">—</strong><small>Parcial, sob consulta ou dados insuficientes</small></article>
+          </div>
+          <section class="prod-insights panel">
+            <div class="panel-heading"><h3>Insights e pontos de atenção</h3><p>Leitura do período selecionado, sem inferir receitas ou metas.</p></div>
+            <div id="prodInsights" class="prod-insights-grid"></div>
+          </section>
+          <div class="prod-chart-grid">
+            <section class="panel"><div class="panel-heading"><h3>Valor estimado por profissional</h3><p>Ranking apenas de atendimentos com preços fechados.</p></div><div id="prodProfessionalValue" class="prod-bars"></div></section>
+            <section class="panel"><div class="panel-heading"><h3>Quantidade por profissional</h3><p>Atendimentos concluídos, incluindo casos sem preço.</p></div><div id="prodProfessionalVolume" class="prod-bars"></div></section>
+            <section class="panel"><div class="panel-heading"><h3>Serviços mais executados</h3><p>Quantidade concluída por serviço.</p></div><div id="prodServiceVolume" class="prod-bars"></div></section>
+            <section class="panel"><div class="panel-heading"><h3>Serviços com maior valor associado</h3><p>Valores estimados e fechados por serviço principal.</p></div><div id="prodServiceValue" class="prod-bars"></div></section>
+            <section class="panel"><div class="panel-heading"><h3>Adicionais mais solicitados</h3><p>Frequência nos atendimentos concluídos, sem preço unitário.</p></div><div id="prodAdditionalVolume" class="prod-bars"></div></section>
+            <section class="panel"><div class="panel-heading"><h3>Tempo médio por profissional</h3><p>Minutos de execução dos atendimentos concluídos.</p></div><div id="prodProfessionalTime" class="prod-bars"></div></section>
+          </div>
+          <section class="panel prod-daily-panel"><div class="panel-heading"><h3>Evolução diária</h3><p>Quantidades concluídas e valores estimados com preço fechado; números sempre visíveis.</p></div><div id="prodDaily" class="prod-daily"></div></section>
+          <section class="panel prod-details-panel">
+            <div class="panel-heading"><h3>Auditoria da produção por atendimento</h3><p>Valores armazenados no encerramento. “Retroativo” indica registro anterior à implantação do controle.</p></div>
+            <div class="table-scroll"><table class="prod-table"><thead><tr>
+              <th>Conclusão</th><th>Pet</th><th>Profissional</th><th>Serviço</th><th>Porte / Pelagem</th>
+              <th>Adicionais</th><th>Execução</th><th>Cobertura</th><th>Valor de referência</th>
+            </tr></thead><tbody id="prodRows"></tbody></table></div>
+          </section>
         </div>
         <div id="admin-servicos" class="admin-panel" hidden>
           <section class="panel">
@@ -222,7 +292,10 @@
               <div class="field"><label for="entrySpecies">Espécie <b>*</b></label><select id="entrySpecies" required><option value="">Selecione</option><option value="cachorro">Cachorro</option><option value="gato">Gato</option></select></div>
               <div class="field"><label for="entryBreed">Raça <b>*</b></label><select id="entryBreed" required disabled><option value="">Selecione a espécie primeiro</option></select><small class="breed-help" id="entryBreedHelp">Para gatos, será registrado Gato/Felino.</small></div>
             </div>
-            <div class="field"><label for="entryPelagem">Tipo de pelagem <span>(opcional)</span></label><select id="entryPelagem"><option value="">Não informado</option><option value="curto">Curto</option><option value="medio">Médio</option><option value="longo">Longo</option></select></div>
+            <div class="two-col">
+              <div class="field"><label for="entryPorte">Porte <b>*</b></label><select id="entryPorte" required><option value="">Selecione o porte</option><option value="pequeno">P — cães até 10 kg</option><option value="medio">M — Médio</option><option value="grande">G — Grande</option></select><small>Os valores disponíveis atualmente são apenas para cães de porte P.</small></div>
+              <div class="field"><label for="entryPelagem">Tipo de pelagem <b>*</b></label><select id="entryPelagem" required><option value="">Selecione a pelagem</option><option value="curto">Curto</option><option value="medio">Médio</option><option value="longo">Longo</option></select></div>
+            </div>
             <div class="field"><label for="entryManejo">Manejo especial <b>*</b></label><select id="entryManejo" required><option value="">Selecione o manejo</option><option value="nao_se_aplica">Não se aplica</option><option value="ansioso">Pet Ansioso</option><option value="agressivo">Pet Agressivo</option><option value="idoso">Pet Idoso</option></select><small>Informação para a equipe, sem valores.</small></div>
             <fieldset class="commercial-extras"><legend>Serviços adicionais <span>(opcional, sem valores)</span></legend><div id="entryAdditionalList" class="extras-checks"></div></fieldset>
             <div class="field"><label for="entryService">Serviço a realizar <b>*</b></label><select id="entryService" required><option value="">Selecione um serviço</option></select></div>
@@ -246,16 +319,17 @@
         <div class="page-heading no-print"><div><span class="eyebrow">PAINEL OPERACIONAL</span><h1>Visão do telão</h1><p>Exibição contínua das filas de atendimento.</p></div><button id="fullscreenBtn" type="button" class="btn btn-outline">Tela cheia</button></div>
         <div class="tv-header"><div class="brand"><img class="brand-logo" src="./assets/logo.webp" alt="Logo Bolhas & Latidos" onerror="this.hidden=true"><span class="brand-fallback">Bolhas <em>&</em> Latidos</span></div><div class="tv-now" id="tvClock"></div></div>
         <div class="tv-grid" id="tvGrid" data-density="single"><div class="tv-column farol-warning"><h2>Aguardando <span id="tvWaitingCount">0</span></h2><div id="tvWaiting" class="tv-list"></div></div><div class="tv-column farol-success"><h2>Em execução <span id="tvActiveCount">0</span></h2><div id="tvActive" class="tv-list"></div></div></div>
-        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 2.1.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 2.2.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
       </section>
     </main>
-    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 2.1.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
+    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 2.2.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
   </div>
   <section id="bookingPrintSheet" hidden aria-label="Ficha de programação para impressão"></section>
   <script src="./config.js?v=20261125-2"></script>
-  <script type="module" src="./app.js?v=210"></script>
-  <script type="module" src="./comercial-admin.js?v=210"></script>
-  <script type="module" src="./agendamento-admin.js?v=210"></script>
-  <script type="module" src="./programacao-entrada.js?v=210"></script>
+  <script type="module" src="./app.js?v=220"></script>
+  <script type="module" src="./producao-admin.js?v=220"></script>
+  <script type="module" src="./comercial-admin.js?v=220"></script>
+  <script type="module" src="./agendamento-admin.js?v=220"></script>
+  <script type="module" src="./programacao-entrada.js?v=220"></script>
 </body>
 </html>

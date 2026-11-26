@@ -158,6 +158,7 @@ async function refresh() {
   setConnection('ok');
   byId('lastUpdated').textContent = 'Atualizado em '+dateFmt.format(new Date())+' às '+hourOf(new Date());
   renderAll();
+  window.dispatchEvent(new Event('bolhas:refreshed'));
 }
 async function loadImageUrls() {
   const paths = [...new Set(state.attendances.map(r=>r.foto_path).filter(Boolean))];
@@ -539,13 +540,15 @@ function bindEvents() {
     const especie=byId('entrySpecies').value;
     const raca=especie==='gato'?'Gato/Felino':byId('entryBreed').value;
     const servico_id=byId('entryService').value,agendado=byId('isScheduled').value==='sim';
-    const manejo=byId('entryManejo').value,pelagem=byId('entryPelagem').value||null;
+    const manejo=byId('entryManejo').value,porte=byId('entryPorte').value,
+      pelagem=byId('entryPelagem').value;
     const adicionais=chosenAdditions();
     const horario_agendado=agendado?byId('scheduledTime').value:null;
     if(!animal_nome||!servico_id||!byId('isScheduled').value||(agendado&&!horario_agendado)||
       !['cachorro','gato'].includes(especie)||!state.breeds.some(b=>b.especie===especie&&b.nome===raca)||
-      !Object.hasOwn(manejoLabels,manejo)){
-      notify('Preencha os campos obrigatórios, inclusive espécie e raça.','error');return;
+      !Object.hasOwn(manejoLabels,manejo)||
+      !['pequeno','medio','grande'].includes(porte)||!['curto','medio','longo'].includes(pelagem)){
+      notify('Preencha os campos obrigatórios, incluindo espécie, raça, porte, pelagem e manejo.','error');return;
     }
     let foto_path=null;
     setLoading(true);
@@ -557,7 +560,7 @@ function bindEvents() {
       }
       const {error}=await supabase.from('atendimentos').insert({
         animal_nome,tutor:tutor||null,especie,raca,servico_id,agendado,horario_agendado,
-        manejo,pelagem,adicionais,
+        manejo,porte,pelagem,adicionais,
         observacao:byId('entryObs').value.trim()||null,foto_path
       });
       if(error)throw error;
