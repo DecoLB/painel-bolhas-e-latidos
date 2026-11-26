@@ -1,3 +1,12 @@
+## V2.1.1 — Escopo de aplicação da tabela recebida (26/11/2026)
+
+- **Única classe com valores comprovados:** P = **cães com peso até 10 kg**. A tabela recebida de quatro serviços × três pelagens (12 valores) já estava vinculada à espécie `cachorro` e ao porte `pequeno`.
+- **Serviços adicionais:** a tabela entregue de hidratação, tosa geral sem banho, antipulgas, desembolo, escovação dental e TaxiDog também é **exclusiva de cães P até 10 kg**. Este escopo agora é persistido na coluna `precos_adicionais.faixa_aplicacao` e conferido no cálculo server-side.
+- **M/G, gatos e raças especiais:** permanecem com valores **sob consulta**, sem extrapolação da tabela P, até receber as tabelas próprias. Raças especiais ainda não têm lista de enquadramento definida; não classificá-las automaticamente.
+- **Futuro:** ao receber as tabelas M/G e especiais, ampliar a modelagem de categorias e os cadastros correspondentes antes de liberar os novos preços.
+- **Gestão e operação:** valores somente no Administrador; o Prestador e o Telão continuam sem valores financeiros. O tutor vê apenas a estimativa agregada sujeita à confirmação.
+- **Implementação:** migração `supabase/migrations/010_porte_p_ate_10kg.sql`, Edge Function `solicitar-agendamento` com bloqueio de reutilização de adicionais P em outras categorias.
+
 ## V2.0 — Raça, espécie e transporte por solicitação
 
 - **Agendamento público**: espécie obrigatória (Cachorro ou Gato); para cães, raça escolhida no catálogo; para gatos, **Gato/Felino** automático; porte e serviço continuam obrigatórios.

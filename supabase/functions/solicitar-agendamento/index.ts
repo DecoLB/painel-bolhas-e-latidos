@@ -81,7 +81,7 @@ Deno.serve(async (req:Request):Promise<Response>=>{
         .eq("servico_id",input.servico_id).eq("especie",input.especie)
         .eq("porte",input.porte).eq("pelagem",coat).maybeSingle(),
       db.from("catalogo_adicionais").select("id").eq("ativo",true).in("id",selected.length?selected:["00000000-0000-0000-0000-000000000000"]),
-      db.from("precos_adicionais").select("adicional_id,valor_centavos,modalidade").in("adicional_id",selected.length?selected:["00000000-0000-0000-0000-000000000000"])
+      db.from("precos_adicionais").select("adicional_id,valor_centavos,modalidade,faixa_aplicacao").in("adicional_id",selected.length?selected:["00000000-0000-0000-0000-000000000000"])
     ]);
     if(service.error||rate.error||availableExtras.error||extraRates.error)
       return respond({erro:"Não foi possível calcular a estimativa no momento."},503);
@@ -90,9 +90,13 @@ Deno.serve(async (req:Request):Promise<Response>=>{
     let total=rate.data?.valor_centavos??0;
     let sob_consulta=!rate.data;
     let tem_minimo=false;
+    // Todos os preços de adicionais recebidos pertencem exclusivamente à tabela P (cães até 10kg).
+    // Mesmo que haja valor para um serviço principal futuro de M/G, não reutilizar adicionais de P.
+    const tabelaP=input.especie==="cachorro" && input.porte==="pequeno";
     for(const id of selected){
       const item=extraRates.data?.find(x=>x.adicional_id===id);
-      if(!item || item.modalidade==="sob_consulta" || item.valor_centavos==null){
+      if(!tabelaP || !item || item.faixa_aplicacao!=="cachorro_P_ate_10kg" ||
+        item.modalidade==="sob_consulta" || item.valor_centavos==null){
         sob_consulta=true;continue;
       }
       total+=item.valor_centavos;

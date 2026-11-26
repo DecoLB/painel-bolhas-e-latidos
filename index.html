@@ -121,9 +121,10 @@
         <div id="admin-servicos" class="admin-panel" hidden>
           <section class="panel">
             <div class="panel-heading"><h2>Catálogo de serviços</h2><p>Somente os serviços ativos serão oferecidos no painel de entrada.</p></div>
+            <p class="commercial-note"><strong>Tabela recebida: exclusivamente cães de porte P, até 10 kg.</strong> As tabelas para M, G e raças especiais ainda serão cadastradas quando recebidas, sem reaproveitar os preços de P.</p>
             <form id="serviceForm" class="commercial-create-form">
               <div class="field"><label for="serviceName">Novo serviço</label><input id="serviceName" maxlength="100" required placeholder="Nome do serviço"></div>
-              <p class="commercial-note">Valor inicial opcional para cães de porte P. Preços de outros portes e gatos podem ser configurados abaixo.</p>
+              <p class="commercial-note">Valor inicial opcional para cães de porte P (até 10 kg). Outras categorias e raças especiais ainda não possuem tabela recebida.</p>
               <div class="commercial-price-row">
                 <label>Pelagem curta (R$)<input type="number" id="newPriceCurto" step="0.01" min="0" placeholder="Não definido"></label>
                 <label>Pelagem média (R$)<input type="number" id="newPriceMedio" step="0.01" min="0" placeholder="Não definido"></label>
@@ -139,7 +140,7 @@
               <div class="commercial-selectors">
                 <label>Serviço<select id="commercialService" required></select></label>
                 <label>Espécie<select id="commercialSpecies"><option value="cachorro">Cachorro</option><option value="gato">Gato</option></select></label>
-                <label>Porte<select id="commercialPorte"><option value="pequeno">Pequeno</option><option value="medio">Médio</option><option value="grande">Grande</option></select></label>
+                <label>Porte<select id="commercialPorte"><option value="pequeno">P — até 10 kg (cães)</option><option value="medio">M — tabela pendente</option><option value="grande">G — tabela pendente</option></select></label>
               </div>
               <div class="commercial-price-row">
                 <label>Curto (R$)<input type="number" id="commercialCurto" min="0" step="0.01" placeholder="Sob consulta"></label>
@@ -151,7 +152,7 @@
           </section>
 
           <section class="panel commercial-addons-panel">
-            <div class="panel-heading"><h2>Serviços adicionais e valores</h2><p>Edite os itens opcionais oferecidos no agendamento. Valores unitários não aparecem para prestadores.</p></div>
+            <div class="panel-heading"><h2>Serviços adicionais e valores — Tabela P</h2><p>Os preços recebidos destes itens são exclusivos de cães P (até 10 kg). Para outras categorias, os adicionais ficam sob consulta. Valores unitários não aparecem para prestadores.</p></div>
             <form id="additionalForm" class="commercial-additional-form">
               <label>Serviço adicional<input id="additionalName" maxlength="120" required placeholder="Nome do adicional"></label>
               <label>Tipo de preço<select id="additionalMode"><option value="fixo">Valor fixo</option><option value="a_partir">A partir de</option><option value="sob_consulta">Sob consulta</option></select></label>
