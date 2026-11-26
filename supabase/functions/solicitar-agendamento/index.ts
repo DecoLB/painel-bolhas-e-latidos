@@ -20,6 +20,8 @@ const plusDays = (iso:string,days:number) => {
   d.setUTCDate(d.getUTCDate()+days);
   return d.toISOString().slice(0,10);
 };
+const isSunday=(iso:string)=>/^\d{4}-\d{2}-\d{2}$/.test(iso) &&
+  new Date(iso+"T12:00:00Z").getUTCDay()===0;
 const brazilToday=()=>new Intl.DateTimeFormat("sv-SE",{
   year:"numeric",month:"2-digit",day:"2-digit",timeZone:"America/Sao_Paulo"
 }).format(new Date());
@@ -141,6 +143,10 @@ Deno.serve(async (req:Request):Promise<Response>=>{
     !/^\d{4}-\d{2}-\d{2}$/.test(data_desejada) || data_desejada<minimo || data_desejada>maximo ||
     (transporte_bolhas===true && !endOk)){
     return respond({erro:"Confira espécie, raça, transporte e data (entre amanhã e 30 dias). Para transporte do Bolhas, informe o endereço completo."},400);
+  }
+
+  if(isSunday(data_desejada)){
+    return respond({erro:"Não há agendamentos aos domingos. Selecione uma data de segunda a sábado, de D+1 até D+30."},400);
   }
 
   // Proteção contra envios repetidos por IP (sem armazenar o IP em texto puro).

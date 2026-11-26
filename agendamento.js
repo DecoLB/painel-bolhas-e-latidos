@@ -7,6 +7,7 @@ const addDays=(iso,n)=>{const d=new Date(iso+"T12:00:00Z");d.setUTCDate(d.getUTC
 const pretty=iso=>new Intl.DateTimeFormat("pt-BR",{timeZone:"UTC",day:"2-digit",month:"long",year:"numeric",weekday:"long"}).format(new Date(iso+"T12:00:00Z"));
 const weekday=iso=>new Intl.DateTimeFormat("pt-BR",{weekday:"short",timeZone:"UTC"}).format(new Date(iso+"T12:00:00Z")).replace(".","");
 const dateLabel=iso=>iso.slice(8,10)+"/"+iso.slice(5,7);
+const isSunday=iso=>/^\d{4}-\d{2}-\d{2}$/.test(iso) && new Date(iso+"T12:00:00Z").getUTCDay()===0;
 let racas=[],adicionais=[];
 let estimateToken=0,estimateTimer=null;
 const checkExtras=()=>[...document.querySelectorAll('#bookingAdditionalList input[type="checkbox"]:checked')].map(x=>x.value);
@@ -96,6 +97,7 @@ function renderCalendar(){
   byId("calendarRange").innerHTML="";
   for(let n=1;n<=30;n++){
     const iso=addDays(today,n);
+    if(isSunday(iso))continue; // D+1 a D+30 permanece fixo; domingos não entram no calendário.
     const b=document.createElement("button");b.type="button";b.className="calendar-day";
     b.setAttribute("aria-pressed",String(iso===previous));
     b.setAttribute("aria-label",pretty(iso));
@@ -109,7 +111,10 @@ function renderCalendar(){
     });
     byId("calendarRange").append(b);
   }
-  if(previous<min || previous>max){byId("desiredDate").value="";byId("selectedDay").textContent="Nenhuma data selecionada.";}
+  if(previous<min || previous>max || isSunday(previous)){
+    byId("desiredDate").value="";
+    byId("selectedDay").textContent="Nenhuma data selecionada.";
+  }
 }
 async function loadServices(){
   const select=byId("servicoPet");
@@ -179,7 +184,9 @@ byId("cep").addEventListener("input",()=>{
 byId("bookingForm").addEventListener("submit",async event=>{
   event.preventDefault();clearError();
   const iso=byId("desiredDate").value,hoje=dateIso();
-  if(!iso || iso<addDays(hoje,1) || iso>addDays(hoje,30)){error("Selecione uma data entre amanhã e os próximos 30 dias.");return;}
+  if(!iso || iso<addDays(hoje,1) || iso>addDays(hoje,30) || isSunday(iso)){
+    error("Selecione uma data de segunda a sábado, entre amanhã e os próximos 30 dias. Não há atendimento aos domingos.");return;
+  }
   if(!byId("bookingForm").reportValidity())return;
   if(!byId('pelagemPet').value){error('Selecione o tipo de pelagem.');return;}
   if(!byId("especiePet").value || (byId("especiePet").value==="cachorro"&&!byId("racaPet").value)){

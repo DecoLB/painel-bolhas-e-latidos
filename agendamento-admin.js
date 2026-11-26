@@ -6,6 +6,7 @@ const plusDays=(iso,n)=>{const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUT
 const pretty=iso=>new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(iso+'T12:00:00Z'));
 const longDate=iso=>new Intl.DateTimeFormat('pt-BR',{dateStyle:'full',timeZone:'UTC'}).format(new Date(iso+'T12:00:00Z'));
 const weekday=iso=>new Intl.DateTimeFormat('pt-BR',{weekday:'short',timeZone:'UTC'}).format(new Date(iso+'T12:00:00Z')).replace('.','');
+const isSunday=iso=>/^\d{4}-\d{2}-\d{2}$/.test(iso) && new Date(iso+'T12:00:00Z').getUTCDay()===0;
 const serviceName=id=>state.services.find(s=>s.id===id)?.nome||'Serviço cadastrado';
 const extrasNames=ids=>(ids||[]).map(id=>state.additionalCatalog.find(x=>x.id===id)?.nome||'Adicional indisponível').join(', ')||'Nenhum';
 const allowed=()=>state.role==='admin';
@@ -48,7 +49,7 @@ async function loadBookings(){
     if(schedule.error)throw schedule.error;
     solicitacoes=reqs.data||[];
     programados=new Map((schedule.data||[]).map(r=>[r.solicitacao_id,r]));
-    if(selectedDate && (selectedDate<start||selectedDate>end))selectedDate=null;
+    if(selectedDate && (selectedDate<start||selectedDate>end||isSunday(selectedDate)))selectedDate=null;
     render();
   }catch(e){notify('Erro ao consultar agendamentos: '+e.message,'error');}
   finally{loading=false;}
@@ -65,6 +66,7 @@ function render(){
   let grid='';
   for(let i=0;i<30;i++){
     const iso=plusDays(start,i);
+    if(isSunday(iso))continue; // Mantém exatamente os 30 dias corridos, sem preencher com datas posteriores.
     const dayP=pending.filter(r=>r.data_desejada===iso).length;
     const dayA=approved.filter(r=>r.data_desejada===iso).length;
     const counts=(dayP?'<small aria-label="'+dayP+' aguardando aprovação">⏳ '+dayP+'</small>':'')
@@ -76,9 +78,17 @@ function render(){
       +'<div class="day-counts">'+counts+'</div></button>';
   }
   byId('bookingCalendar').innerHTML=grid;
+  const legacySundays=solicitacoes.filter(r=>isSunday(r.data_desejada));
+  const exceptions=byId('bookingSundayExceptions');
+  exceptions.hidden=legacySundays.length===0;
+  exceptions.textContent=legacySundays.length
+    ? 'Atenção: '+legacySundays.length+' agendamento(s) preexistente(s) em domingo ('+
+      [...new Set(legacySundays.map(r=>pretty(r.data_desejada)))].join(', ')+
+      '). Não serão cancelados automaticamente. A equipe deve avaliar o reagendamento. Novos domingos estão bloqueados.'
+    : '';
   byId('bookingSelectedFilter').textContent=selectedDate
     ? 'Filtrado por '+pretty(selectedDate)+' · Clique novamente no dia para ver todos'
-    : 'Todos os pedidos dos próximos 30 dias · Clique numa data para filtrar';
+    : 'Pedidos de D+1 a D+30 (sem domingos) · Clique numa data para filtrar';
   const scopedPending=selectedDate?pending.filter(r=>r.data_desejada===selectedDate):pending;
   const scopedApproved=selectedDate?approved.filter(r=>r.data_desejada===selectedDate):approved;
   byId('bookingPendingList').innerHTML=scopedPending.length
@@ -104,6 +114,7 @@ function card(r,pending){
     +'<div class="booking-card-head"><strong>'+esc(r.pet_nome)+'</strong>'+badge(stateLabel)+'</div>'
     +'<div class="booking-card-meta"><b>Tutor:</b> '+esc(r.tutor_nome)+'</div>'
     +'<div class="booking-card-meta"><b>Data:</b> '+esc(pretty(r.data_desejada))+' · <b>Porte:</b> '+esc(sizeLabels[r.porte]||r.porte)+'</div>'
+    +(isSunday(r.data_desejada)?'<div class="booking-sunday-inline"><strong>Exceção:</strong> domingo não operacional. Revisar agendamento preexistente.</div>':'')
     +'<div class="booking-card-meta"><b>Espécie:</b> '+esc(speciesLabel(r))+' · <b>Raça:</b> '+esc(breedLabel(r))+'</div>'
     +'<div class="booking-card-meta"><b>Transporte:</b> '+esc(transportLabel(r))+'</div>'
     +'<div class="booking-card-meta"><b>Serviço:</b> '+esc(serviceName(r.servico_id))+' · <b>Pelagem:</b> '+esc(r.pelagem||'Não informada')+'</div>'
@@ -156,7 +167,7 @@ function printSchedule(){
     +'<table class="booking-print-table"><thead><tr><th>#</th><th>Pet / Tutor</th>'
     +'<th>Porte</th><th>Serviço</th><th>Transporte</th><th>Endereço</th><th>Situação</th></tr></thead>'
     +'<tbody>'+(rows||'<tr><td colspan="7">Nenhum agendamento aprovado nesta data.</td></tr>')+'</tbody></table>'
-    +'<footer class="booking-print-footer">Versão 2.2.0 · Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA · Relatório de programação · Impresso em '
+    +'<footer class="booking-print-footer">Versão 2.3.1 · Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA · Relatório de programação · Impresso em '
     +esc(new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Sao_Paulo'}).format(new Date()))
     +'</footer>';
   sheet.hidden=false;

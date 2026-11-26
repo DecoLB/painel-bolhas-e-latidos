@@ -1,3 +1,13 @@
+## V2.3.1 — Agendamentos de segunda a sábado (26/11/2026)
+
+- A janela de solicitação pública continua **de amanhã (D+1) até D+30 em dias corridos**. O calendário oculta os domingos sem ampliar a janela até 30 dias úteis.
+- O formulário público rejeita datas de domingo mesmo que o campo oculto seja alterado manualmente.
+- A Edge Function `solicitar-agendamento` impede novos domingos **antes de consumir a cota de solicitações**.
+- Um trigger de banco bloqueia `INSERT` ou alteração de `data_desejada` para domingo, inclusive por chamadas diretas.
+- O calendário administrativo também omite os domingos dentro da janela. Os pedidos anteriores aprovados para domingo são preservados e destacados como exceção para decisão humana, sem cancelamento automático.
+- A impressão das programações preexistentes continua disponível, inclusive para conferir e tratar eventuais domingos anteriores à regra.
+- Nenhuma alteração no fluxo operacional, cadastro, preço, perfis, fotos, transporte ou retenção.
+
 ## V2.3.0 — Produção por atividade, múltiplos prestadores e auditoria
 
 ### Novo fluxo

@@ -8,7 +8,7 @@
   <title>Bolhas & Latidos | Painel Operacional</title>
   <link rel="icon" href="./assets/logo.webp" type="image/webp">
   <link rel="stylesheet" href="./styles.css">
-  <link rel="stylesheet" href="./agendamento-admin.css">
+  <link rel="stylesheet" href="./agendamento-admin.css?v=231">
   <link rel="stylesheet" href="./programacao-entrada.css">
   <link rel="stylesheet" href="./visual-v2.css?v=2">
   <link rel="stylesheet" href="./visual-v3.css?v=180">
@@ -42,7 +42,7 @@
       <p id="setupInfo" class="setup-info" hidden>O banco ainda não foi conectado. Configure o projeto Supabase em config.js para habilitar o acesso.</p>
       
     </form>
-    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 2.3.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 2.3.1</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
   </section>
   <div id="appShell" class="shell" hidden>
     <header class="topbar">
@@ -265,7 +265,7 @@
         <div id="admin-agendamentos" class="admin-panel" hidden>
           <section class="panel">
             <div class="panel-heading appointment-heading">
-              <div><h2>Calendário de agendamentos</h2><p>Próximos 30 dias, a partir de amanhã. Pedidos pendentes aguardam aprovação.</p></div>
+              <div><h2>Calendário de agendamentos</h2><p>Agendamentos de D+1 a D+30, sem domingos. Pedidos pendentes aguardam aprovação.</p></div>
               <div class="appointment-links">
                 <a class="btn btn-outline" target="_blank" rel="noopener" href="./agendamento.html">Abrir formulário público</a>
                 <button type="button" class="btn btn-primary" id="copyBookingLink">Copiar link para o tutor</button>
@@ -277,7 +277,8 @@
               <button type="button" class="btn btn-primary" id="printBookingSchedule">Imprimir programação do dia</button>
             </div>
             <div class="booking-legend"><span><i class="legend-dot pending"></i> Pendente de análise</span><span><i class="legend-dot approved"></i> Aprovado e programado</span><span><i class="legend-dot rejected"></i> Recusado na entrada</span></div>
-            <div class="appointment-calendar" id="bookingCalendar" aria-label="Calendário de solicitações dos próximos 30 dias"></div>
+            <div class="appointment-calendar" id="bookingCalendar" aria-label="Calendário de solicitações de amanhã até 30 dias corridos, excluindo domingos"></div>
+            <div id="bookingSundayExceptions" class="booking-sunday-exceptions" role="status" aria-live="polite" hidden></div>
           </section>
           <div class="split appointment-lists">
             <section class="panel">
@@ -347,10 +348,10 @@
         <div class="page-heading no-print"><div><span class="eyebrow">PAINEL OPERACIONAL</span><h1>Visão do telão</h1><p>Exibição contínua das filas de atendimento.</p></div><button id="fullscreenBtn" type="button" class="btn btn-outline">Tela cheia</button></div>
         <div class="tv-header"><div class="brand"><img class="brand-logo" src="./assets/logo.webp" alt="Logo Bolhas & Latidos" onerror="this.hidden=true"><span class="brand-fallback">Bolhas <em>&</em> Latidos</span></div><div class="tv-now" id="tvClock"></div></div>
         <div class="tv-grid" id="tvGrid" data-density="single"><div class="tv-column farol-warning"><h2>Aguardando <span id="tvWaitingCount">0</span></h2><div id="tvWaiting" class="tv-list"></div></div><div class="tv-column farol-success"><h2>Em execução <span id="tvActiveCount">0</span></h2><div id="tvActive" class="tv-list"></div></div></div>
-        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 2.3.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 2.3.1</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
       </section>
     </main>
-    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 2.3.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
+    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 2.3.1</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
   </div>
   <section id="bookingPrintSheet" hidden aria-label="Ficha de programação para impressão"></section>
   <script src="./config.js?v=20261125-2"></script>
@@ -358,7 +359,7 @@
   <script type="module" src="./etapas-v23.js?v=230"></script>
   <script type="module" src="./producao-admin.js?v=230"></script>
   <script type="module" src="./comercial-admin.js?v=230"></script>
-  <script type="module" src="./agendamento-admin.js?v=230"></script>
+  <script type="module" src="./agendamento-admin.js?v=231"></script>
   <script type="module" src="./programacao-entrada.js?v=230"></script>
 </body>
 </html>
