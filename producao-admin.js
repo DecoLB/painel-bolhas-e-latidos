@@ -24,23 +24,48 @@ const coverageLabel={
 const coverageBadge={
   completo:'success',parcial:'warning',sob_consulta:'warning',sem_dados:'neutral'
 };
-let rows=[],shown=[],stageRates=[],loading=false,loadVersion=0,loadTimer=null,loadedOnce=false;
+let rows=[],shown=[],stageValues=new Map(),loading=false,loadVersion=0,loadTimer=null,loadedOnce=false;
 const stagesOf=id=>state.etapas.filter(x=>x.atendimento_id===id);
 const confirmedOn=id=>state.etapaProfissionais.filter(p=>p.etapa_id===id&&p.papel==='confirmado');
 const executorsOf=r=>{
  const unique=new Set(stagesOf(r.id).flatMap(x=>confirmedOn(x.id).map(p=>p.profissional_id)));
  return unique.size?[...unique].map(professionalName).join(', '):professionalName(r.profissional_id);
 };
-async function fetchStageRates(attendances){
+async function fetchStageValues(attendances){
  const ids=new Set(attendances.map(a=>a.id)),stages=state.etapas.filter(e=>ids.has(e.atendimento_id));
- const result=[];
+ const result=new Map();
  for(let i=0;i<stages.length;i+=100){
-  const {data,error}=await supabase.from('etapa_rateios').select('etapa_id,profissional_id,valor_centavos,percentual')
-   .in('etapa_id',stages.slice(i,i+100).map(x=>x.id));
+  const {data,error}=await supabase.from('etapa_valores').select('etapa_id,valor_centavos')
+   .in('etapa_id',stages.slice(i,i+100).map(e=>e.id));
   if(error)throw error;
-  result.push(...(data||[]));
+  for(const row of data||[])result.set(row.etapa_id,row.valor_centavos);
  }
  return result;
+}
+function fullProductAttributions(attendances){
+ const results=[];
+ for(const r of attendances){
+  const etapas=stagesOf(r.id).filter(e=>e.status==='concluido');
+  if(!etapas.length){
+   if(r.profissional_id&&Number.isInteger(r.finance.valor_referencia_centavos))
+    results.push({name:professionalName(r.profissional_id),value:r.finance.valor_referencia_centavos});
+   continue;
+  }
+  const visited=new Set();
+  for(const e of etapas){
+   const amount=e.tipo==='principal'?r.finance.valor_base_centavos:stageValues.get(e.id);
+   if(!Number.isInteger(amount))continue;
+   for(const staff of confirmedOn(e.id)){
+    // Um pacote composto só é associado uma vez ao MESMO profissional.
+    const productKey=e.tipo==='principal'?'main':e.id;
+    const key=staff.profissional_id+'|'+productKey;
+    if(visited.has(key))continue;
+    visited.add(key);
+    results.push({name:professionalName(staff.profissional_id),value:amount});
+   }
+  }
+ }
+ return results;
 }
 const inAdmin=()=>state.role==='admin'&&!$('appShell').hidden;
 const isVisible=()=>inAdmin()&& !$('admin-producao').hidden&&!$('page-admin').hidden;
@@ -100,9 +125,9 @@ async function load(){
     syncOptions();
     const completed=await fetchAllCompleted(range.start,range.end);
     const snapshots=await fetchSnapshots(completed.data);
-    const rates=await fetchStageRates(completed.data);
+    const values=await fetchStageValues(completed.data);
     if(version!==loadVersion)return;
-    stageRates=rates;
+    stageValues=values;
     rows=completed.data.map(a=>({
       ...a,
       finance:snapshots.get(a.id)||{
@@ -166,7 +191,7 @@ function renderInsights(data,complete,unpriced,byProfValue,byProfVolume){
   const retros=data.filter(x=>x.finance.origem==='retroativo').length;
   const extrasTotal=data.reduce((sum,x)=>sum+(x.adicionais||[]).length,0);
   const notes=[
-    ['Maior valor associado',mapProfessional.length?mapProfessional[0].name+' · '+currency(mapProfessional[0].value)+' em '+mapProfessional[0].count+' atendimento(s) com preço fechado.':'Ainda não há profissional com valor integralmente estimado.'],
+    ['Maior valor associado',mapProfessional.length?mapProfessional[0].name+' · '+currency(mapProfessional[0].value)+' em '+mapProfessional[0].count+' produto(s) com preço fechado.':'Ainda não há profissional com valor integralmente estimado.'],
     ['Maior volume de atendimento',allProfessional.length?allProfessional[0].name+' · '+allProfessional[0].count+' atendimento(s) concluído(s).':'Sem conclusões para comparar.'],
     ['Serviço mais executado',serviceVolume.length?serviceVolume[0].name+' · '+serviceVolume[0].value+' conclusão(ões).':'Sem serviços concluídos no período.'],
     ['Adicionais realizados',extrasTotal+' item(ns) adicional(is) associado(s) a atendimentos concluídos.'],
@@ -221,12 +246,9 @@ function render(){
   const complete=shown.filter(x=>x.finance.cobertura==='completo'&&Number.isInteger(x.finance.valor_referencia_centavos));
   const unpriced=shown.filter(x=>x.finance.cobertura!=='completo');
   const selectedProfessional=$('prodProfessional').value;
-  const completeIds=new Set(complete.map(x=>x.id));
-  const sum=complete.reduce((n,x)=>{
-    if(!selectedProfessional||!stagesOf(x.id).length)return n+x.finance.valor_referencia_centavos;
-    return n+stagesOf(x.id).flatMap(e=>stageRates.filter(rt=>rt.etapa_id===e.id&&
-      rt.profissional_id===selectedProfessional)).reduce((a,rt)=>a+(rt.valor_centavos||0),0);
-  },0);
+  // O total do painel contabiliza cada atendimento uma única vez.
+  // A seleção por profissional restringe os atendimentos exibidos, sem atribuir parcelas financeiras.
+  const sum=complete.reduce((n,x)=>n+x.finance.valor_referencia_centavos,0);
   const partialSum=shown.filter(x=>x.finance.cobertura==='parcial'&&Number.isInteger(x.finance.valor_referencia_centavos))
     .reduce((n,x)=>n+x.finance.valor_referencia_centavos,0);
   const execution=shown.map(x=>minutes(x.iniciado_em,x.concluido_em)).filter(x=>x!==null);
@@ -240,14 +262,8 @@ function render(){
   set('prodCycle',mins(mean(cycle)));
   set('prodPartial',currency(partialSum));set('prodUnpriced',String(unpriced.length));
 
-  const legacyComplete=complete.filter(r=>!stagesOf(r.id).length);
   const legacyAll=shown.filter(r=>!stagesOf(r.id).length);
-  const v23RateItems=stageRates.filter(rt=>state.etapas.some(e=>
-     e.id===rt.etapa_id&&completeIds.has(e.atendimento_id)));
-  const byProfValue=group([
-    ...legacyComplete.map(r=>({name:professionalName(r.profissional_id),valor:r.finance.valor_referencia_centavos})),
-    ...v23RateItems.filter(rt=>rt.valor_centavos!=null).map(rt=>({name:professionalName(rt.profissional_id),valor:rt.valor_centavos}))
-  ],r=>r.name,r=>r.valor);
+  const byProfValue=group(fullProductAttributions(complete),r=>r.name,r=>r.value);
   const shownIds=new Set(shown.map(r=>r.id));
   const v23ExecutorItems=state.etapas.filter(e=>e.status==='concluido'&&shownIds.has(e.atendimento_id))
     .flatMap(e=>confirmedOn(e.id).map(p=>({name:professionalName(p.profissional_id)})));

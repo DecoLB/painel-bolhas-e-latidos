@@ -1,3 +1,21 @@
+## V2.4.1 — Valor integral por produto executado (26/11/2026)
+
+**Regra vigente:** não há cálculo nem sugestão de comissão ou divisão financeira. O Administrador consulta o preço cheio do **produto contratado**, vinculado às atividades executadas e a cada profissional confirmado.
+
+- Se o produto comercial é **Banho com Tosa na Máquina** de R$ 180,00, e Ariana executa o Banho enquanto Rosana executa a Tosa, **cada atividade mostra o produto completo de R$ 180,00** como referência comercial. O sistema não cria artificialmente os preços de "Banho" e "Tosa" separados, pois a tabela informa somente o preço do pacote.
+- A mesma pessoa pode executar Banho e Tosa; para o seu consolidado de **produtos associados**, o produto é contado **uma única vez por atendimento e profissional**, mesmo que tenha mais de uma atividade.
+- Se profissionais diferentes participarem do mesmo produto, o preço comercial será visível como referência para cada um. **Os totais de produtos associados aos profissionais não são aditivos entre pessoas** e não podem ser confundidos com vendas ou recebimentos.
+- **Valor geral do atendimento:** soma de produtos comerciais contratados e adicionais precificados uma única vez; não é obtido pela soma das linhas de atividade ou dos profissionais. Estimativas parciais são identificadas.
+- **Adicionais:** cada item tem seu valor próprio da tabela comercial, atribuído integralmente aos executores confirmados. Valores sob consulta não são inventados.
+- **Conferência de fichas:** permite corrigir quem executou o quê e horários, com justificativa e trilha de auditoria. Campos de percentual e controles de divisão monetária foram retirados da UI.
+- **Banco de dados:** a função `app_private.distribuir_valores_v23` passou a registrar o preço cheio do produto principal em cada atividade, conservando o valor próprio de cada adicional. Não gera novas linhas em `etapa_rateios`. A RPC antiga `ajustar_rateio_v23` teve a permissão de execução revogada para usuários autenticados.
+- **Preservação histórica:** não foram apagados registros anteriores, preços congelados nem eventos de auditoria. A nova UI deriva valores comerciais plenos dos snapshots e dos executores confirmados, inclusive para registros antigos, sem reinterpretar parcelas históricas como remuneração.
+- **Segurança:** os valores continuam restritos ao Administrador. Prestadores, Operacional e Telão não recebem valores.
+- **Testes:** integração com Golden Retriever, Banho + Tosa na Máquina (R$ 180,00), Hidratação (R$ 50,00), dois executores e duas atividades principais: referência integral em ambas as atividades, total único do atendimento R$ 230,00, nenhuma nova alocação monetária. Transação de teste revertida.
+- Arquivos: `supabase/migrations/026_valor_integral_por_produto_sem_comissao.sql`, `etapas-v23.js`, `producao-admin.js`, `index.html`.
+
+> As seções V2.3 e V2.4.0 a seguir permanecem como histórico de versões. Onde descrevem percentuais ou divisões de preço, essas regras foram **substituídas integralmente pela V2.4.1**.
+
 ## V2.4.0 — Precificação automática por raça, porte e felinos
 
 **Fonte:** sete tabelas de banho/tosa e uma tabela veterinária fornecidas pelo cliente em 26/11/2026.

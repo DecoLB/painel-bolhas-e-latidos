@@ -154,24 +154,27 @@ $('entryService').addEventListener('change',renderEntryPlan);
 $('entryAdditionalList').addEventListener('change',renderEntryPlan);
 window.addEventListener('bolhas:entrada-reset',()=>renderEntryPlan());
 
-let finVals=[],finRates=[],conferences=[],audit=[],loadingAdmin=false;
+let finVals=[],finSnapshots=[],conferences=[],audit=[],loadingAdmin=false;
 const isAdmin=()=>state.role==='admin'&&!$('appShell').hidden;
 const valuesById=id=>finVals.find(v=>v.etapa_id===id);
-const shares=id=>finRates.filter(r=>r.etapa_id===id);
+const financeByPet=id=>finSnapshots.find(v=>v.atendimento_id===id);
+const fullProductValue=stage=>stage.tipo==='principal'
+ ?financeByPet(stage.atendimento_id)?.valor_base_centavos??null
+ :valuesById(stage.id)?.valor_centavos??null;
 const reviewed=id=>conferences.find(c=>c.atendimento_id===id);
 async function loadAdmin(){
  if(!isAdmin()||loadingAdmin)return;
  loadingAdmin=true;
  try{
-  const [v,r,c,a]=await Promise.all([
-   supabase.from('etapa_valores').select('*').limit(3500),
-   supabase.from('etapa_rateios').select('*').limit(8500),
-   supabase.from('fichas_conferencia').select('*').limit(3500),
-   supabase.from('etapa_auditoria').select('*').order('registrado_em',{ascending:false}).limit(400)
-  ]);
-  for(const result of [v,r,c,a])if(result.error)throw result.error;
-  finVals=v.data||[];finRates=r.data||[];conferences=c.data||[];audit=a.data||[];
-  renderAudit();renderProduction();
+   const [v,f,c,a]=await Promise.all([
+     supabase.from('etapa_valores').select('*').limit(3500),
+     supabase.from('producao_valores').select('atendimento_id,valor_base_centavos,valor_referencia_centavos,cobertura').limit(3500),
+     supabase.from('fichas_conferencia').select('*').limit(3500),
+     supabase.from('etapa_auditoria').select('*').order('registrado_em',{ascending:false}).limit(400)
+   ]);
+   for(const result of [v,f,c,a])if(result.error)throw result.error;
+   finVals=v.data||[];finSnapshots=f.data||[];conferences=c.data||[];audit=a.data||[];
+   renderAudit();renderProduction();
  }catch(e){notify('Falha na conferência: '+e.message,'error');}
  finally{loadingAdmin=false;}
 }
@@ -183,52 +186,44 @@ function stageStaffChecklist(stage,role='confirmado'){
    +(current.includes(p.id)?' checked':'')+'><span>'+esc(p.name)+'</span></label>').join('');
 }
 function auditStage(stage){
- const v=valuesById(stage.id);const done=stage.status==='concluido',current=participants(stage.id,'confirmado');
- const rs=shares(stage.id);
+ const done=stage.status==='concluido',current=participants(stage.id,'confirmado');
+ const full=fullProductValue(stage),pet=findPet(stage.atendimento_id);
+ const product=stage.tipo==='principal'?serviceName(pet?.servico_id):stage.nome;
  return '<article class="v23-stage-audit" data-v23-stage="'+esc(stage.id)+'">'
- +'<header><strong>'+esc(stage.nome)+'</strong><span class="v23-status">'+esc(done?'Concluído':stage.status==='em_execucao'?'Em execução':'Aguardando')+'</span></header>'
- +'<div class="v23-stage-meta"><span><b>Previsto:</b> '+esc(names(participants(stage.id,'previsto')))+'</span>'
- +'<span><b>Confirmado:</b> '+esc(names(current))+'</span>'
- +'<span><b>Início/fim:</b> '+esc(hour(stage.iniciado_em))+' / '+esc(hour(stage.concluido_em))+'</span>'
- +'<span><b>Peso no pacote:</b> '+esc(stage.tipo==='principal'?(v?.peso_pacote??'—')+'%':'Adicional independente')+'</span>'
- +'<span><b>Valor associado:</b> '+esc(v?.valor_centavos!=null?money(v.valor_centavos):'Sob consulta')+'</span>'
- +'</div>'
- +(rs.length?'<div class="v23-share-lines"><b>Rateio por executor:</b> '+rs.map(s=>
-    '<span>'+esc(staffName(s.profissional_id))+': '+s.percentual+'% · '+esc(s.valor_centavos!=null?money(s.valor_centavos):'Sob consulta')+'</span>').join('')+'</div>':'')
- +(done?'<details class="v23-correct-form"><summary>Corrigir registro (Administrador)</summary>'
-  +'<div class="v23-correct-grid">'
-  +'<label>Início real <input data-v23-start-time type="datetime-local" step="1" value="'+esc(local(stage.iniciado_em))+'"></label>'
-  +'<label>Fim real <input data-v23-end-time type="datetime-local" step="1" value="'+esc(local(stage.concluido_em))+'"></label>'
-  +(stage.tipo==='principal'?'<label>Percentual desta etapa no pacote <input data-v23-weight type="number" min="0" max="100" value="'+esc(v?.peso_pacote??100)+'"></label>':'')
-  +'</div><div class="v23-edit-executors"><b>Executores reais:</b><div class="v23-person-grid">'
-  +stageStaffChecklist(stage)+'</div></div>'
-  +'<label>Justificativa da correção <textarea data-v23-justification maxlength="500" rows="2" placeholder="Conforme ficha física, responsável correto..."></textarea></label>'
-  +'<button type="button" class="btn btn-primary" data-v23-correct="'+esc(stage.id)+'">Registrar correção auditada</button>'
-  +(rs.length>1?'<hr><div class="v23-rate-box"><b>Distribuição entre executores (%)</b>'
-    +'<div class="v23-rate-inputs">'+rs.map(s=>'<label>'+esc(staffName(s.profissional_id))
-    +'<input type="number" min="0" max="100" step="1" data-v23-rate-prof="'+esc(s.profissional_id)+'" value="'+s.percentual+'"></label>').join('')+'</div>'
-    +'<label>Justificativa do rateio <input data-v23-rate-reason maxlength="500" placeholder="Rateio conforme ficha diária"></label>'
-    +'<button type="button" class="btn btn-outline" data-v23-rate="'+esc(stage.id)+'">Salvar rateio</button></div>':'')
-  +'</details>':'')
- +'</article>';
+  +'<header><strong>'+esc(stage.nome)+'</strong><span class="v23-status">'+esc(done?'Concluído':stage.status==='em_execucao'?'Em execução':'Aguardando')+'</span></header>'
+  +'<div class="v23-stage-meta"><span><b>Produto:</b> '+esc(product)+'</span>'
+  +'<span><b>Previsto:</b> '+esc(names(participants(stage.id,'previsto')))+'</span>'
+  +'<span><b>Executado por:</b> '+esc(names(current))+'</span>'
+  +'<span><b>Início/fim:</b> '+esc(hour(stage.iniciado_em))+' / '+esc(hour(stage.concluido_em))+'</span>'
+  +'<span><b>Valor integral do produto:</b> '+esc(full!=null?money(full):'Sob consulta')+'</span></div>'
+  +(done?'<details class="v23-correct-form"><summary>Corrigir registro (Administrador)</summary>'
+   +'<div class="v23-correct-grid">'
+   +'<label>Início real <input data-v23-start-time type="datetime-local" step="1" value="'+esc(local(stage.iniciado_em))+'"></label>'
+   +'<label>Fim real <input data-v23-end-time type="datetime-local" step="1" value="'+esc(local(stage.concluido_em))+'"></label>'
+   +'</div><div class="v23-edit-executors"><b>Executores reais:</b><div class="v23-person-grid">'
+   +stageStaffChecklist(stage)+'</div></div>'
+   +'<label>Justificativa da correção <textarea data-v23-justification maxlength="500" rows="2" placeholder="Conforme ficha física, responsável correto..."></textarea></label>'
+   +'<button type="button" class="btn btn-primary" data-v23-correct="'+esc(stage.id)+'">Registrar correção auditada</button>'
+   +'</details>':'')
+  +'</article>';
 }
 function auditCard(a){
  const stages=state.etapas.filter(x=>x.atendimento_id===a.id);
  const done=stages.length>0&&stages.every(x=>x.status==='concluido');
- const check=reviewed(a.id);
- const vals=stages.map(x=>valuesById(x.id)).filter(Boolean);
- const totalKnown=vals.reduce((sum,v)=>sum+(v.valor_centavos||0),0);
- const partial=vals.some(v=>v.cobertura!=='completo');
+ const check=reviewed(a.id),snapshot=financeByPet(a.id);
+ const total=snapshot?.valor_referencia_centavos??null;
+ const partial=snapshot?.cobertura!=='completo';
  return '<article class="v23-audit-card">'
-  +'<header><div><h3>'+esc(a.animal_nome)+'</h3>'
-  +'<p>'+esc(serviceName(a.servico_id))+' · '+esc(hour(a.criado_em))+' · '+stages.length+' atividades</p></div>'
-  +'<span class="v23-status '+(check?'v23-status-reviewed':done?'v23-status-pending':'')+'">'
-  +esc(check?'Ficha conferida':done?'Pendente de conferência':'Em andamento')+'</span></header>'
-  +'<div class="v23-total"><b>Referência estimada:</b> '+esc(vals.some(v=>v.valor_centavos!=null)?money(totalKnown)+(partial?' · parcial':''):'Sob consulta')+'</div>'
-  +stages.map(auditStage).join('')
-  +(done&&!check?'<button type="button" data-v23-confirm-card="'+esc(a.id)+'" class="btn btn-primary">Conferir ficha do animal</button>':'')
-  +(check?'<p class="v23-muted">Conferida em '+esc(hour(check.conferido_em))+' · Correções posteriores reabrem a conferência.</p>':'')
-  +'</article>';
+   +'<header><div><h3>'+esc(a.animal_nome)+'</h3>'
+   +'<p>'+esc(serviceName(a.servico_id))+' · '+esc(hour(a.criado_em))+' · '+stages.length+' atividades</p></div>'
+   +'<span class="v23-status '+(check?'v23-status-reviewed':done?'v23-status-pending':'')+'">'
+   +esc(check?'Ficha conferida':done?'Pendente de conferência':'Em andamento')+'</span></header>'
+   +'<div class="v23-total"><b>Valor único do atendimento:</b> '+esc(total!=null?money(total)+(partial?' · parcial':''):'Sob consulta')+'</div>'
+   +'<p class="v23-muted">O preço integral de um produto composto pode aparecer em mais de uma atividade. O atendimento é contabilizado apenas uma vez.</p>'
+   +stages.map(auditStage).join('')
+   +(done&&!check?'<button type="button" data-v23-confirm-card="'+esc(a.id)+'" class="btn btn-primary">Conferir ficha do animal</button>':'')
+   +(check?'<p class="v23-muted">Conferida em '+esc(hour(check.conferido_em))+' · Correções posteriores reabrem a conferência.</p>':'')
+   +'</article>';
 }
 function renderAudit(){
  if(!isAdmin())return;
@@ -244,59 +239,69 @@ function renderAudit(){
   '<div class="empty">Nenhuma ficha com etapas registrada na data selecionada.</div>';
  const ids=new Set(selected.map(a=>a.id));
  const logs=audit.filter(x=>ids.has(x.atendimento_id));
+ const displayHistory=v=>{
+  const clean=item=>{
+   if(Array.isArray(item))return item.map(clean);
+   if(item&&typeof item==='object')return Object.fromEntries(
+     Object.entries(item).filter(([key])=>!['rateios','peso_pacote','percentual'].includes(key))
+       .map(([key,val])=>[key,clean(val)]));
+   return item;
+  };return JSON.stringify(clean(v),null,2);
+ };
  $('v23AuditHistory').innerHTML=logs.length?logs.map(x=>
-  '<details class="v23-log"><summary><b>'+esc(x.evento)+'</b> · '
-  +esc(new Date(x.registrado_em).toLocaleString('pt-BR'))+' · '
-  +esc(x.justificativa)+'</summary>'
-  +'<div><b>Antes</b><pre>'+esc(JSON.stringify(x.anterior,null,2))+'</pre></div>'
-  +'<div><b>Depois</b><pre>'+esc(JSON.stringify(x.posterior,null,2))+'</pre></div></details>').join(''):
+  '<details class="v23-log"><summary><b>'+esc(x.evento==='rateio'?'Ajuste histórico de atividade':x.evento)+'</b> · '
+  +esc(new Date(x.registrado_em).toLocaleString('pt-BR'))+' · '+esc(x.justificativa)+'</summary>'
+  +'<div><b>Antes</b><pre>'+esc(displayHistory(x.anterior))+'</pre></div>'
+  +'<div><b>Depois</b><pre>'+esc(displayHistory(x.posterior))+'</pre></div></details>').join(''):
   '<p class="v23-muted">Sem correções ou conferências registradas para a data.</p>';
 }
 function renderProduction(){
  if(!isAdmin())return;
- const root=$('v23Production');
- const mode=$('prodPeriod').value,end=mode==='custom'?$('prodEndDate').value:today();
+ const root=$('v23Production'),mode=$('prodPeriod').value,end=mode==='custom'?$('prodEndDate').value:today();
  const start=mode==='1'?today():mode==='custom'?$('prodStartDate').value:(()=>{
   const d=new Date(today()+'T12:00:00Z');d.setUTCDate(d.getUTCDate()-6);return d.toISOString().slice(0,10);
  })();
- const profFilter=$('prodProfessional').value,serviceFilter=$('prodService').value,
-   coverageFilter=$('prodCoverage').value;
+ const profFilter=$('prodProfessional').value,serviceFilter=$('prodService').value,coverageFilter=$('prodCoverage').value;
  const chosen=state.attendances.filter(a=>a.status==='concluido'&&a.concluido_em
-   &&day(a.concluido_em)>=start&&day(a.concluido_em)<=end
-   &&(!serviceFilter||a.servico_id===serviceFilter));
+  &&day(a.concluido_em)>=start&&day(a.concluido_em)<=end
+  &&(!serviceFilter||a.servico_id===serviceFilter));
  const ids=new Set(chosen.map(a=>a.id));
  const stages=state.etapas.filter(s=>ids.has(s.atendimento_id)&&s.status==='concluido'
-   &&(!coverageFilter||valuesById(s.id)?.cobertura===coverageFilter));
- const rows=[];
+   &&(!coverageFilter||financeByPet(s.atendimento_id)?.cobertura===coverageFilter));
+ const rows=[],byProduct=new Map();
  for(const stage of stages){
-  const val=valuesById(stage.id);
-  for(const share of shares(stage.id)){
-   if(profFilter&&share.profissional_id!==profFilter)continue;
-   rows.push({
-   nome:staffName(share.profissional_id),pet:petName(stage.atendimento_id),
-   etapa:stage.nome,participacao:share.percentual,valor:share.valor_centavos,
-   cobertura:val?.cobertura||'pendente'
-  });
+  const pet=findPet(stage.atendimento_id),valor=fullProductValue(stage);
+  const produto=stage.tipo==='principal'?serviceName(pet?.servico_id):stage.nome;
+  const key=stage.tipo==='principal'?'produto:'+stage.atendimento_id:'adicional:'+stage.id;
+  const cobertura=financeByPet(stage.atendimento_id)?.cobertura||'sem_dados';
+  for(const id of participants(stage.id,'confirmado')){
+   if(profFilter&&id!==profFilter)continue;
+   rows.push({pet:petName(stage.atendimento_id),atividade:stage.nome,produto,
+      profissional:staffName(id),valor,cobertura});
+   const chave=id+'|'+key; // Mesmo executor em Banho e Tosa: um só produto comercial associado.
+   if(!byProduct.has(chave))byProduct.set(chave,{id,profissional:staffName(id),valor,cobertura});
   }
  }
- const totals=new Map();
- for(const r of rows){
-  const row=totals.get(r.nome)||{nome:r.nome,quantidade:0,total:0,completos:0};
-  row.quantidade++;
-  if(r.cobertura==='completo'&&r.valor!=null){row.total+=r.valor;row.completos++;}
-  totals.set(r.nome,row);
+ const map=new Map();
+ for(const x of byProduct.values()){
+  const item=map.get(x.id)||{nome:x.profissional,produtos:0,conhecidos:0,total:0};
+  item.produtos++;
+  if(x.cobertura==='completo'&&x.valor!=null){item.total+=x.valor;item.conhecidos++;}
+  map.set(x.id,item);
  }
- const summary=[...totals.values()].sort((a,b)=>b.total-a.total);
- root.innerHTML='<div class="v23-summary-list">'+(summary.length?summary.map(x=>
-  '<div><strong>'+esc(x.nome)+'</strong><span>'+x.quantidade+' atividades · '
-  +x.completos+' com preço fechado · <b>'+money(x.total)+'</b></span></div>').join(''):
-  '<p class="v23-muted">Sem execuções por atividade para os filtros selecionados.</p>')+'</div>'
+ const summary=[...map.values()].sort((a,b)=>b.total-a.total);
+ root.innerHTML='<p class="v23-muted">Valores integrais por produto e executor confirmado. O mesmo produto pode ser associado a vários profissionais; os valores por profissional não devem ser somados entre si como novas vendas.</p>'
+  +'<div class="v23-summary-list">'+(summary.length?summary.map(x=>
+  '<div><strong>'+esc(x.nome)+'</strong><span>'+x.produtos+' produto(s) · '
+  +x.conhecidos+' com preço fechado · <b>'+money(x.total)+'</b> em produtos associados</span></div>').join(''):
+  '<p class="v23-muted">Sem serviços executados para os filtros escolhidos.</p>')+'</div>'
   +'<div class="table-scroll"><table class="prod-table v23-prod-table"><thead><tr>'
-  +'<th>Pet</th><th>Atividade</th><th>Executor</th><th>Participação</th><th>Referência</th><th>Cobertura</th>'
+  +'<th>Pet</th><th>Produto comercial</th><th>Atividade executada</th><th>Profissional</th><th>Valor integral do produto</th><th>Cobertura</th>'
   +'</tr></thead><tbody>'+(rows.length?rows.map(x=>
-   '<tr><td>'+esc(x.pet)+'</td><td>'+esc(x.etapa)+'</td><td>'+esc(x.nome)+'</td><td>'+x.participacao+'%</td>'
-   +'<td>'+esc(x.valor!=null?money(x.valor):'Sob consulta')+'</td><td>'+esc(x.cobertura)+'</td></tr>').join(''):
-   '<tr><td colspan="6">Ainda sem atividades concluídas.</td></tr>')+'</tbody></table></div>';
+   '<tr><td>'+esc(x.pet)+'</td><td>'+esc(x.produto)+'</td><td>'+esc(x.atividade)+'</td>'
+   +'<td>'+esc(x.profissional)+'</td><td>'+esc(x.valor!=null?money(x.valor):'Sob consulta')+'</td>'
+   +'<td>'+esc(x.cobertura)+'</td></tr>').join(''):
+   '<tr><td colspan="6">Sem atividades concluídas.</td></tr>')+'</tbody></table></div>';
 }
 async function withAdminRpc(fn,args,message){
  if(!isAdmin()||working)return;
@@ -317,34 +322,21 @@ $('v23AuditCards').addEventListener('click',async e=>{
   await withAdminRpc('conferir_ficha_v23',{p_atendimento_id:review.dataset.v23ConfirmCard},'Ficha conferida pelo Administrador.');
   return;
  }
- const corr=e.target.closest('[data-v23-correct]'),rate=e.target.closest('[data-v23-rate]');
- if(!corr&&!rate)return;
- const stageId=corr?.dataset.v23Correct||rate.dataset.v23Rate;
- const box=e.target.closest('[data-v23-stage]');
- if(corr){
-  const actual=[...box.querySelectorAll('input[data-v23-correct-executor]:checked')].map(x=>x.value);
-  const reason=box.querySelector('[data-v23-justification]').value.trim();
-  const start=box.querySelector('[data-v23-start-time]').value,end=box.querySelector('[data-v23-end-time]').value;
-  const weight=box.querySelector('[data-v23-weight]')?.value||'100';
-  if(!start||!end||reason.length<8||!actual.length){
-   notify('Informe os executores, horários e a justificativa de pelo menos 8 caracteres.','error');return;
-  }
-  await withAdminRpc('corrigir_etapa_v23',{
-   p_etapa_id:stageId,p_profissionais:actual,p_inicio:localISO(start),
-   p_fim:localISO(end),p_peso:Number(weight),p_justificativa:reason
-  },'Correção registrada com trilha de auditoria.');
- }else{
-  const distribution=[...box.querySelectorAll('[data-v23-rate-prof]')].map(x=>({
-    profissional_id:x.dataset.v23RateProf,percentual:Number(x.value)
-  }));
-  const reason=box.querySelector('[data-v23-rate-reason]').value.trim();
-  if(reason.length<8||distribution.reduce((s,x)=>s+x.percentual,0)!==100){
-   notify('Rateio deve somar 100% e conter justificativa com pelo menos 8 caracteres.','error');return;
-  }
-  await withAdminRpc('ajustar_rateio_v23',{
-   p_etapa_id:stageId,p_distribuicao:distribution,p_justificativa:reason
-  },'Rateio ajustado com registro de auditoria.');
+ const corr=e.target.closest('[data-v23-correct]');
+ if(!corr)return;
+ const stageId=corr.dataset.v23Correct,box=e.target.closest('[data-v23-stage]');
+ const actual=[...box.querySelectorAll('input[data-v23-correct-executor]:checked')].map(x=>x.value);
+ const reason=box.querySelector('[data-v23-justification]').value.trim();
+ const start=box.querySelector('[data-v23-start-time]').value,end=box.querySelector('[data-v23-end-time]').value;
+ // Assinatura legada da RPC exige este campo interno, sem função financeira.
+ const internal=valuesById(stageId)?.peso_pacote??100;
+ if(!start||!end||reason.length<8||!actual.length){
+  notify('Informe executores, horários e justificativa de pelo menos 8 caracteres.','error');return;
  }
+ await withAdminRpc('corrigir_etapa_v23',{
+  p_etapa_id:stageId,p_profissionais:actual,p_inicio:localISO(start),
+  p_fim:localISO(end),p_peso:internal,p_justificativa:reason
+ },'Correção registrada com trilha de auditoria.');
 });
 $('v23AuditDate').value=today();$('v23AuditDate').max=today();
 $('v23AuditDate').addEventListener('change',renderAudit);

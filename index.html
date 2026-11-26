@@ -43,7 +43,7 @@
       <p id="setupInfo" class="setup-info" hidden>O banco ainda não foi conectado. Configure o projeto Supabase em config.js para habilitar o acesso.</p>
       
     </form>
-    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 2.4.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 2.4.1</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
   </section>
   <div id="appShell" class="shell" hidden>
     <header class="topbar">
@@ -127,12 +127,12 @@
           <section class="prod-heading">
             <div>
               <span class="eyebrow">INTELIGÊNCIA GERENCIAL · ACESSO RESTRITO</span>
-              <h2>Produção e valores associados</h2>
-              <p>Valores de referência dos atendimentos concluídos, calculados com a tabela vigente na conclusão. <strong>Não representam faturamento recebido, cobrança ou lucro.</strong></p>
+              <h2>Produção e valores dos serviços executados</h2>
+              <p>Valor integral de cada produto, conforme a tabela comercial vigente na conclusão, associado aos profissionais que efetivamente executaram suas atividades. <strong>O valor do atendimento é contabilizado uma única vez.</strong></p>
             </div>
             <span class="tag farol-tag status-neutral"><span class="farol-dot" aria-hidden="true"></span>Somente Administrador</span>
           </section>
-          <div class="prod-disclaimer"><strong>Governança:</strong> valores completos somente quando há preço fechado para o serviço e todos os adicionais aplicáveis. Estimativas parciais, transporte e combinações sem tabela ficam separados do total. Histórico disponível conforme retenção operacional de até 7 dias.</div>
+          <div class="prod-disclaimer"><strong>Critério comercial:</strong> o valor exibido por executor corresponde ao preço cheio do produto ou serviço efetivamente executado. No pacote Banho + Tosa, o produto contratado mantém seu preço integral, mesmo quando possui mais de um executor. Os valores por profissional são referências associadas e não devem ser somados para obter o total da operação. Estimativas parciais permanecem identificadas. Histórico sujeito à retenção operacional de até 7 dias.</div>
           <div class="prod-toolbar no-print">
             <label>Período
               <select id="prodPeriod">
@@ -161,9 +161,9 @@
           </div>
           <p id="prodMessage" class="prod-message" role="status" aria-live="polite">Carregue o painel para consultar a produção.</p>
           <div class="prod-kpi-grid">
-            <article class="prod-kpi"><span>Produção estimada com preço fechado</span><strong id="prodTotal">—</strong><small>Somente atendimentos concluídos e integralmente precificados</small></article>
+            <article class="prod-kpi"><span>Valor dos atendimentos com preço fechado</span><strong id="prodTotal">—</strong><small>Somente atendimentos concluídos e integralmente precificados</small></article>
             <article class="prod-kpi"><span>Atendimentos concluídos</span><strong id="prodCompleted">—</strong><small>Contabilizados na seleção</small></article>
-            <article class="prod-kpi"><span>Ticket médio estimado</span><strong id="prodTicket">—</strong><small>Somente atendimentos com preço fechado</small></article>
+            <article class="prod-kpi"><span>Preço médio por atendimento</span><strong id="prodTicket">—</strong><small>Somente atendimentos com preço fechado</small></article>
             <article class="prod-kpi"><span>Cobertura de precificação</span><strong id="prodCoveragePct">—</strong><small id="prodCoverageDetail">Atendimentos com preço integral / total concluído</small></article>
             <article class="prod-kpi"><span>Tempo médio de execução</span><strong id="prodExecution">—</strong><small>Conclusões com início e fim registrados</small></article>
             <article class="prod-kpi"><span>Tempo médio total do atendimento</span><strong id="prodCycle">—</strong><small>Da entrada até a conclusão, quando ambas estão registradas</small></article>
@@ -176,14 +176,14 @@
             <div id="prodInsights" class="prod-insights-grid"></div>
           </section>
           <div class="prod-chart-grid">
-            <section class="panel"><div class="panel-heading"><h3>Valor estimado por profissional</h3><p>Ranking apenas de atendimentos com preços fechados.</p></div><div id="prodProfessionalValue" class="prod-bars"></div></section>
+            <section class="panel"><div class="panel-heading"><h3>Valor integral dos produtos por profissional</h3><p>Produtos associados a cada executor, com valor cheio. O mesmo produto pode aparecer para profissionais diferentes; os valores não são acumuláveis entre eles.</p></div><div id="prodProfessionalValue" class="prod-bars"></div></section>
             <section class="panel"><div class="panel-heading"><h3>Atividades por profissional</h3><p>Quantidade de atividades concluídas, incluindo serviços sem preço.</p></div><div id="prodProfessionalVolume" class="prod-bars"></div></section>
             <section class="panel"><div class="panel-heading"><h3>Serviços mais executados</h3><p>Quantidade concluída por serviço.</p></div><div id="prodServiceVolume" class="prod-bars"></div></section>
             <section class="panel"><div class="panel-heading"><h3>Serviços com maior valor associado</h3><p>Valores estimados e fechados por serviço principal.</p></div><div id="prodServiceValue" class="prod-bars"></div></section>
             <section class="panel"><div class="panel-heading"><h3>Adicionais mais solicitados</h3><p>Frequência nos atendimentos concluídos, sem preço unitário.</p></div><div id="prodAdditionalVolume" class="prod-bars"></div></section>
             <section class="panel"><div class="panel-heading"><h3>Tempo médio por profissional</h3><p>Minutos por atividade concluída; legado usa duração do atendimento.</p></div><div id="prodProfessionalTime" class="prod-bars"></div></section>
           </div>
-          <section class="panel v23-prod-block"><div class="panel-heading"><h3>Produção por atividade e profissional</h3><p>Distribuição de valores por banho, tosa e adicionais, com rateio sem duplicação. Somente valores estimados, não recebimentos.</p></div>
+          <section class="panel v23-prod-block"><div class="panel-heading"><h3>Serviços realizados por profissional</h3><p>Pet, produto contratado, atividade executada, profissional confirmado e valor integral do produto. Quando um pacote possui várias atividades, seu preço é mantido sem divisões financeiras.</p></div>
             <div id="v23Production" aria-live="polite"><div class="empty">Carregando detalhamento por atividade...</div></div>
           </section>
           <section class="panel prod-daily-panel"><div class="panel-heading"><h3>Evolução diária</h3><p>Quantidades concluídas e valores estimados com preço fechado; números sempre visíveis.</p></div><div id="prodDaily" class="prod-daily"></div></section>
@@ -392,16 +392,16 @@
         <div class="page-heading no-print"><div><span class="eyebrow">PAINEL OPERACIONAL</span><h1>Visão do telão</h1><p>Exibição contínua das filas de atendimento.</p></div><button id="fullscreenBtn" type="button" class="btn btn-outline">Tela cheia</button></div>
         <div class="tv-header"><div class="brand"><img class="brand-logo" src="./assets/logo.webp" alt="Logo Bolhas & Latidos" onerror="this.hidden=true"><span class="brand-fallback">Bolhas <em>&</em> Latidos</span></div><div class="tv-now" id="tvClock"></div></div>
         <div class="tv-grid" id="tvGrid" data-density="single"><div class="tv-column farol-warning"><h2>Aguardando <span id="tvWaitingCount">0</span></h2><div id="tvWaiting" class="tv-list"></div></div><div class="tv-column farol-success"><h2>Em execução <span id="tvActiveCount">0</span></h2><div id="tvActive" class="tv-list"></div></div></div>
-        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 2.4.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 2.4.1</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
       </section>
     </main>
-    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 2.4.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
+    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 2.4.1</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
   </div>
   <section id="bookingPrintSheet" hidden aria-label="Ficha de programação para impressão"></section>
   <script src="./config.js?v=20261125-2"></script>
   <script type="module" src="./app.js?v=240"></script>
-  <script type="module" src="./etapas-v23.js?v=240"></script>
-  <script type="module" src="./producao-admin.js?v=240"></script>
+  <script type="module" src="./etapas-v23.js?v=241"></script>
+  <script type="module" src="./producao-admin.js?v=241"></script>
   <script type="module" src="./comercial-admin.js?v=240"></script>
   <script type="module" src="./tabelas-v24.js?v=240"></script>
   <script type="module" src="./agendamento-admin.js?v=240"></script>
