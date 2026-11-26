@@ -29,7 +29,9 @@ const additionalNames=ids=>(ids||[]).map(id=>state.additionalCatalog.find(a=>a.i
 const chosenAdditions=()=>[...document.querySelectorAll('#entryAdditionalList input[type="checkbox"]:checked')].map(el=>el.value);
 function renderEntryAdditionalList(){
   const node=byId('entryAdditionalList'),checked=new Set(chosenAdditions());
-  node.innerHTML=state.additionalCatalog.filter(a=>a.ativo).map(a=>
+  const sp=byId('entrySpecies').value,breed=byId('entryBreed').value;
+  const hotelAllowed=sp==='cachorro'&&['São Bernardo','Samoieda','Terra Nova','Bernese'].includes(breed);
+  node.innerHTML=state.additionalCatalog.filter(a=>a.ativo&&(a.nome!=='Hotelzinho'||hotelAllowed)).map(a=>
     '<label class="extra-item"><input type="checkbox" value="'+esc(a.id)+'"'+(checked.has(a.id)?' checked':'')+'><span>'+esc(a.nome)+'</span></label>'
   ).join('')||'<small>Sem adicionais cadastrados</small>';
 }
@@ -562,7 +564,10 @@ function bindEvents() {
     state.photo=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.82));
     updatePhotoPreview();await stopCamera();
   });
-  byId('entrySpecies').addEventListener('change',renderEntryBreeds);
+  byId('entrySpecies').addEventListener('change',()=>{
+    renderEntryBreeds();renderEntryAdditionalList();
+  });
+  byId('entryBreed').addEventListener('change',renderEntryAdditionalList);
   byId('entryForm').addEventListener('submit',async e=>{
     e.preventDefault();
     if(state.busy)return;

@@ -8,7 +8,7 @@
   <title>Solicitar agendamento | Bolhas & Latidos</title>
   <link rel="icon" href="./assets/logo.webp" type="image/webp">
   <link rel="stylesheet" href="./styles.css">
-  <link rel="stylesheet" href="./agendamento.css">
+  <link rel="stylesheet" href="./agendamento.css?v=240">
   <link rel="stylesheet" href="./visual-v2.css?v=2">
   <link rel="stylesheet" href="./visual-v3.css?v=180">
   <link rel="stylesheet" href="./farol-v19.css?v=190">
@@ -38,7 +38,7 @@
           <div class="field"><label for="petNome">Nome do pet <b>*</b></label><input id="petNome" maxlength="120" minlength="2" placeholder="Nome do animal" required></div>
           <div class="field"><label for="especiePet">Espécie <b>*</b></label><select id="especiePet" required><option value="">Selecione</option><option value="cachorro">Cachorro</option><option value="gato">Gato</option></select></div>
           <div class="field"><label for="racaPet">Raça <b>*</b></label><select id="racaPet" required disabled><option value="">Selecione a espécie primeiro</option></select><small id="racaMessage" class="public-help">Para gatos, será registrado Gato/Felino.</small></div>
-          <div class="field"><label for="portePet">Porte <b>*</b></label><select id="portePet" required><option value="">Selecione o porte</option><option value="pequeno">P — Pequeno</option><option value="medio">M — Médio</option><option value="grande">G — Grande</option></select><small class="public-help">Tabela P: somente cães até 10 kg. Cães M e G, gatos e raças especiais: preço sob consulta até o cadastro de suas tabelas.</small></div>
+          <div class="field"><label for="portePet">Porte <b>*</b></label><select id="portePet" required><option value="">Selecione o porte</option><option value="pequeno">P — Pequeno</option><option value="medio">M — Médio</option><option value="grande">G — Grande</option></select><small class="public-help">Para cães P, M e G, utilizamos a tabela por pelagem; raças especiais e felinos têm tabela própria. Os preços exibidos são estimativas.</small></div>
           <div class="field"><label for="pelagemPet">Tipo de pelagem <b>*</b></label><select id="pelagemPet" required><option value="">Selecione</option><option value="curto">Curto</option><option value="medio">Médio</option><option value="longo">Longo</option></select></div>
           <div class="field"><label for="servicoPet">Serviço a realizar <b>*</b></label><select id="servicoPet" required><option value="">Carregando serviços...</option></select></div>
         </div>
@@ -91,9 +91,9 @@
       <p class="public-help">A data selecionada ainda não está confirmada.</p>
       <button type="button" class="btn btn-outline" id="newBooking">Solicitar outro agendamento</button>
     </section>
-    <footer class="public-footer"><span>Bolhas & Latidos · Banho & Tosa · Veterinário</span><div class="legal-footer public-legal-footer"><span class="version-label">Versão 2.3.1</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
+    <footer class="public-footer"><span>Bolhas & Latidos · Banho & Tosa · Veterinário</span><div class="legal-footer public-legal-footer"><span class="version-label">Versão 2.4.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
   </main>
   <script src="./config.js?v=20261125-2"></script>
-  <script type="module" src="./agendamento.js?v=231"></script>
+  <script type="module" src="./agendamento.js?v=240"></script>
 </body>
 </html>

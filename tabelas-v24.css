@@ -1,0 +1,27 @@
+/* Bolhas & Latidos V2.4 — Tabelas comerciais por raça, espécie e porte */
+.v24-special-panel{margin-top:18px}
+.v24-special-panel .panel-heading{margin-bottom:12px}
+.v24-grid-form{display:flex;flex-wrap:wrap;align-items:end;gap:11px;margin:15px 0}
+.v24-grid-form>label{display:flex;flex:1 1 180px;flex-direction:column;gap:6px;font-size:12px;font-weight:780;color:#51453b;min-width:140px}
+.v24-grid-form>label select,.v24-grid-form>label input{min-height:43px;border:1px solid #e8d1bc;border-radius:11px;padding:9px 11px;background:white;color:#28221c}
+.v24-grid-form>button{min-height:43px;flex:0 0 auto}
+.v24-group-help{font-size:12px;color:#6c5545;line-height:1.65;padding:11px 12px;
+ background:#fff5e9;border-radius:10px;border:1px solid #edd7c2}
+.v24-price-table{width:100%;border-collapse:collapse;font-size:13px;min-width:650px}
+.v24-price-table th{text-align:left;color:#615449;padding:12px 10px;border-bottom:2px solid #eedaca;font-size:12px}
+.v24-price-table td{padding:10px 9px;vertical-align:middle;border-bottom:1px solid #f1e5dc}
+.v24-price-table tr:hover{background:#fff8f2}
+.v24-price-table select,.v24-price-table input{min-width:100px;max-width:180px;min-height:38px;
+ padding:8px;border:1px solid #e4cdbb;border-radius:9px;background:#fff;color:#29221d}
+.v24-price-table td .btn{font-size:12px;min-height:36px}
+.v24-money{font-weight:850;color:#a64a03;font-variant-numeric:tabular-nums}
+.v24-not-defined{font-size:11px;font-weight:680;color:#a14c23}
+.v24-subtle{display:block;font-size:11px;color:#7c6c62;line-height:1.4;margin-top:5px}
+.extra-item[hidden]{display:none!important}
+@media(max-width:650px){
+ .v24-grid-form{flex-direction:column;align-items:stretch}
+ .v24-grid-form>label{flex:none;width:100%}
+ .v24-grid-form>button{width:100%}
+ .v24-price-table{font-size:12px}
+}
+@media print{.v24-special-panel input,.v24-special-panel select,.v24-special-panel button{display:none}}

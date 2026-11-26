@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="./comercial-v21.css?v=210">
   <link rel="stylesheet" href="./producao-v22.css?v=220">
   <link rel="stylesheet" href="./etapas-v23.css?v=231">
+  <link rel="stylesheet" href="./tabelas-v24.css?v=240">
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -42,7 +43,7 @@
       <p id="setupInfo" class="setup-info" hidden>O banco ainda não foi conectado. Configure o projeto Supabase em config.js para habilitar o acesso.</p>
       
     </form>
-    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 2.3.1</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 2.4.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
   </section>
   <div id="appShell" class="shell" hidden>
     <header class="topbar">
@@ -214,10 +215,10 @@
         <div id="admin-servicos" class="admin-panel" hidden>
           <section class="panel">
             <div class="panel-heading"><h2>Catálogo de serviços</h2><p>Somente os serviços ativos serão oferecidos no painel de entrada.</p></div>
-            <p class="commercial-note"><strong>Tabela recebida: exclusivamente cães de porte P, até 10 kg.</strong> As tabelas para M, G e raças especiais ainda serão cadastradas quando recebidas, sem reaproveitar os preços de P.</p>
+            <p class="commercial-note"><strong>Tabelas atualizadas:</strong> P, M e G por pelagem, felinos e raças especiais por seleção de raça. Os valores do grupo especial têm prioridade sobre a tabela geral de porte; serviços ausentes no grupo permanecem sob consulta.</p>
             <form id="serviceForm" class="commercial-create-form">
               <div class="field"><label for="serviceName">Novo serviço</label><input id="serviceName" maxlength="100" required placeholder="Nome do serviço"></div>
-              <p class="commercial-note">Valor inicial opcional para cães de porte P (até 10 kg). Outras categorias e raças especiais ainda não possuem tabela recebida.</p>
+              <p class="commercial-note">O cadastro inicial continua opcional para cães P. Use as seções abaixo para atualizar outras categorias e raças especiais.</p>
               <div class="commercial-price-row">
                 <label>Pelagem curta (R$)<input type="number" id="newPriceCurto" step="0.01" min="0" placeholder="Não definido"></label>
                 <label>Pelagem média (R$)<input type="number" id="newPriceMedio" step="0.01" min="0" placeholder="Não definido"></label>
@@ -232,8 +233,8 @@
             <form id="servicePriceForm" class="commercial-price-form">
               <div class="commercial-selectors">
                 <label>Serviço<select id="commercialService" required></select></label>
-                <label>Espécie<select id="commercialSpecies"><option value="cachorro">Cachorro</option><option value="gato">Gato</option></select></label>
-                <label>Porte<select id="commercialPorte"><option value="pequeno">P — até 10 kg (cães)</option><option value="medio">M — tabela pendente</option><option value="grande">G — tabela pendente</option></select></label>
+                <label>Espécie<select id="commercialSpecies"><option value="cachorro">Cachorro (tabelas gerais por porte)</option></select></label>
+                <label>Porte<select id="commercialPorte"><option value="pequeno">P — até 10 kg</option><option value="medio">M — de 11 a 20 kg</option><option value="grande">G — de 21 a 40 kg</option></select></label>
               </div>
               <div class="commercial-price-row">
                 <label>Curto (R$)<input type="number" id="commercialCurto" min="0" step="0.01" placeholder="Sob consulta"></label>
@@ -245,7 +246,7 @@
           </section>
 
           <section class="panel commercial-addons-panel">
-            <div class="panel-heading"><h2>Serviços adicionais e valores — Tabela P</h2><p>Os preços recebidos destes itens são exclusivos de cães P (até 10 kg). Para outras categorias, os adicionais ficam sob consulta. Valores unitários não aparecem para prestadores.</p></div>
+            <div class="panel-heading"><h2>Serviços adicionais e valores — Tabela P</h2><p>Manutenção da tabela original P. Os adicionais para M, G, felinos e raças especiais são mantidos separadamente abaixo. Valores nunca aparecem para prestadores.</p></div>
             <form id="additionalForm" class="commercial-additional-form">
               <label>Serviço adicional<input id="additionalName" maxlength="120" required placeholder="Nome do adicional"></label>
               <label>Tipo de preço<select id="additionalMode"><option value="fixo">Valor fixo</option><option value="a_partir">A partir de</option><option value="sob_consulta">Sob consulta</option></select></label>
@@ -254,6 +255,49 @@
             </form>
             <div id="additionalAdminList" class="commercial-additional-list"></div>
           </section>
+          <section class="panel v24-special-panel">
+            <div class="panel-heading">
+              <h2>Tabelas por raça especial e felinos</h2>
+              <p>O preço desta tabela é usado automaticamente ao selecionar uma das raças vinculadas, independentemente do porte e da pelagem. O serviço não cadastrado permanece sob consulta.</p>
+            </div>
+            <form id="specialPriceForm" class="v24-grid-form">
+              <label>Grupo de precificação<select id="specialPriceGroup" required></select></label>
+              <label>Serviço principal<select id="specialPriceService" required></select></label>
+              <label>Preço do serviço (R$)<input id="specialPriceValue" type="number" min="0" max="1000000" step="0.01" placeholder="Sob consulta"></label>
+              <button class="btn btn-primary" type="submit">Salvar preço da raça</button>
+            </form>
+            <p id="specialPriceBreeds" class="v24-group-help"></p>
+            <div class="table-scroll"><table class="v24-price-table"><thead><tr><th>Serviço</th><th>Valor aplicável</th></tr></thead><tbody id="specialPriceTable"></tbody></table></div>
+          </section>
+          <section class="panel v24-special-panel">
+            <div class="panel-heading">
+              <h2>Adicionais por categoria</h2>
+              <p>Preços próprios para M, G, raças especiais e felinos. O sinal “a partir de” mantém a estimativa parcial. Valores ausentes não são copiados de outra tabela.</p>
+            </div>
+            <div class="v24-grid-form"><label>Categoria<select id="extraPriceGroup"></select></label></div>
+            <div class="table-scroll"><table class="v24-price-table"><thead><tr><th>Adicional</th><th>Modalidade</th><th>Valor (R$)</th><th>Ação</th></tr></thead><tbody id="extraGroupTable"></tbody></table></div>
+          </section>
+          <section class="panel v24-special-panel">
+            <div class="panel-heading">
+              <h2>Manejo especial — referências comerciais</h2>
+              <p>Valores cadastrados conforme as tabelas. <strong>O manejo continua somente informativo no atendimento e não integra a estimativa nem o rateio dos prestadores.</strong></p>
+            </div>
+            <form id="manejoPriceForm" class="v24-grid-form">
+              <label>Categoria<select id="manejoPriceGroup"></select></label>
+              <label>Pet ansioso (R$)<input id="manejoPriceAnsioso" type="number" min="0" step="0.01" required></label>
+              <label>Pet agressivo (R$)<input id="manejoPriceAgressivo" type="number" min="0" step="0.01" required></label>
+              <label>Pet idoso (R$)<input id="manejoPriceIdoso" type="number" min="0" step="0.01" required></label>
+              <button class="btn btn-outline" type="submit">Salvar referências de manejo</button>
+            </form>
+          </section>
+          <section class="panel v24-special-panel">
+            <div class="panel-heading">
+              <h2>Catálogo de serviços veterinários</h2>
+              <p>Vacinas, consultas e exames cadastrados em catálogo administrativo separado. Ainda não são oferecidos no agendamento de banho e tosa, pois seu fluxo de execução não foi definido.</p>
+            </div>
+            <div class="table-scroll"><table class="v24-price-table"><thead><tr><th>Categoria</th><th>Procedimento e condições</th><th>Modalidade</th><th>Valor (R$)</th><th>Ação</th></tr></thead><tbody id="v24VetTable"></tbody></table></div>
+          </section>
+          <button id="v24Reload" class="btn btn-outline" type="button">Atualizar todas as tabelas comerciais</button>
         </div>
         <div id="admin-profissionais" class="admin-panel" hidden>
           <section class="panel">
@@ -317,7 +361,7 @@
               <div class="field"><label for="entryBreed">Raça <b>*</b></label><select id="entryBreed" required disabled><option value="">Selecione a espécie primeiro</option></select><small class="breed-help" id="entryBreedHelp">Para gatos, será registrado Gato/Felino.</small></div>
             </div>
             <div class="two-col">
-              <div class="field"><label for="entryPorte">Porte <b>*</b></label><select id="entryPorte" required><option value="">Selecione o porte</option><option value="pequeno">P — cães até 10 kg</option><option value="medio">M — Médio</option><option value="grande">G — Grande</option></select><small>Os valores disponíveis atualmente são apenas para cães de porte P.</small></div>
+              <div class="field"><label for="entryPorte">Porte <b>*</b></label><select id="entryPorte" required><option value="">Selecione o porte</option><option value="pequeno">P — cães até 10 kg</option><option value="medio">M — Médio</option><option value="grande">G — Grande</option></select><small>Tabelas P, M e G por pelagem, além de valores especiais por raça e para felinos.</small></div>
               <div class="field"><label for="entryPelagem">Tipo de pelagem <b>*</b></label><select id="entryPelagem" required><option value="">Selecione a pelagem</option><option value="curto">Curto</option><option value="medio">Médio</option><option value="longo">Longo</option></select></div>
             </div>
             <div class="field"><label for="entryManejo">Manejo especial <b>*</b></label><select id="entryManejo" required><option value="">Selecione o manejo</option><option value="nao_se_aplica">Não se aplica</option><option value="ansioso">Pet Ansioso</option><option value="agressivo">Pet Agressivo</option><option value="idoso">Pet Idoso</option></select><small>Informação para a equipe, sem valores.</small></div>
@@ -348,18 +392,19 @@
         <div class="page-heading no-print"><div><span class="eyebrow">PAINEL OPERACIONAL</span><h1>Visão do telão</h1><p>Exibição contínua das filas de atendimento.</p></div><button id="fullscreenBtn" type="button" class="btn btn-outline">Tela cheia</button></div>
         <div class="tv-header"><div class="brand"><img class="brand-logo" src="./assets/logo.webp" alt="Logo Bolhas & Latidos" onerror="this.hidden=true"><span class="brand-fallback">Bolhas <em>&</em> Latidos</span></div><div class="tv-now" id="tvClock"></div></div>
         <div class="tv-grid" id="tvGrid" data-density="single"><div class="tv-column farol-warning"><h2>Aguardando <span id="tvWaitingCount">0</span></h2><div id="tvWaiting" class="tv-list"></div></div><div class="tv-column farol-success"><h2>Em execução <span id="tvActiveCount">0</span></h2><div id="tvActive" class="tv-list"></div></div></div>
-        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 2.3.1</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 2.4.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
       </section>
     </main>
-    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 2.3.1</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
+    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 2.4.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
   </div>
   <section id="bookingPrintSheet" hidden aria-label="Ficha de programação para impressão"></section>
   <script src="./config.js?v=20261125-2"></script>
-  <script type="module" src="./app.js?v=230"></script>
-  <script type="module" src="./etapas-v23.js?v=230"></script>
-  <script type="module" src="./producao-admin.js?v=230"></script>
-  <script type="module" src="./comercial-admin.js?v=230"></script>
-  <script type="module" src="./agendamento-admin.js?v=231"></script>
-  <script type="module" src="./programacao-entrada.js?v=230"></script>
+  <script type="module" src="./app.js?v=240"></script>
+  <script type="module" src="./etapas-v23.js?v=240"></script>
+  <script type="module" src="./producao-admin.js?v=240"></script>
+  <script type="module" src="./comercial-admin.js?v=240"></script>
+  <script type="module" src="./tabelas-v24.js?v=240"></script>
+  <script type="module" src="./agendamento-admin.js?v=240"></script>
+  <script type="module" src="./programacao-entrada.js?v=240"></script>
 </body>
 </html>

@@ -8,7 +8,7 @@ const pretty=iso=>new Intl.DateTimeFormat("pt-BR",{timeZone:"UTC",day:"2-digit",
 const weekday=iso=>new Intl.DateTimeFormat("pt-BR",{weekday:"short",timeZone:"UTC"}).format(new Date(iso+"T12:00:00Z")).replace(".","");
 const dateLabel=iso=>iso.slice(8,10)+"/"+iso.slice(5,7);
 const isSunday=iso=>/^\d{4}-\d{2}-\d{2}$/.test(iso) && new Date(iso+"T12:00:00Z").getUTCDay()===0;
-let racas=[],adicionais=[];
+let racas=[],adicionais=[],tabelasRacas=[],nomesTabelas=[];
 let estimateToken=0,estimateTimer=null;
 const checkExtras=()=>[...document.querySelectorAll('#bookingAdditionalList input[type="checkbox"]:checked')].map(x=>x.value);
 function updateIncluded(){
@@ -19,10 +19,10 @@ const money=cents=>(cents/100).toLocaleString('pt-BR',{style:'currency',currency
 function scheduleEstimate(){
   clearTimeout(estimateTimer);
   // A prévia básica aparece ao escolher serviço/porte/pelagem; transporte só a ajusta.
-  const required=['especiePet','portePet','pelagemPet','servicoPet'];
+  const required=['especiePet','racaPet','portePet','pelagemPet','servicoPet'];
   if(required.some(id=>!byId(id).value)){
     ++estimateToken;
-    byId('estimateTotal').textContent='Selecione serviço, pelagem e transporte';
+    byId('estimateTotal').textContent='Selecione raça, serviço e pelagem';
     byId('estimateInfo').textContent='A prévia será calculada automaticamente.';
     return;
   }
@@ -31,7 +31,9 @@ function scheduleEstimate(){
   estimateTimer=setTimeout(async()=>{
     try{
       const body={
-        acao:'estimar',especie:byId('especiePet').value,porte:byId('portePet').value,
+        acao:'estimar',especie:byId('especiePet').value,
+        raca:byId('especiePet').value==='gato'?'Gato/Felino':byId('racaPet').value,
+        porte:byId('portePet').value,
         pelagem:byId('pelagemPet').value,servico_id:byId('servicoPet').value,
         transporte_bolhas:byId('transporteBolhas').value==='sim',
         adicionais:checkExtras()
@@ -56,6 +58,30 @@ function scheduleEstimate(){
 }
 const addressIds=["cep","rua","numero","complemento","bairro","cidade","uf"];
 const requiredAddressIds=["cep","rua","numero","cidade","uf"];
+function selectedPriceGroup(){
+  const species=byId('especiePet').value,breed=byId('racaPet').value;
+  if(species==='gato')return 'felino';
+  const group=tabelasRacas.find(row=>row.raca===breed)?.grupo_codigo;
+  return group||({pequeno:'porte_p',medio:'porte_m',grande:'porte_g'})[byId('portePet').value]||'';
+}
+function syncExtraVisibility(){
+  const group=selectedPriceGroup();
+  for(const label of byId('bookingAdditionalList').querySelectorAll('label.extra-item')){
+    const checkbox=label.querySelector('input[type="checkbox"]');
+    if(!checkbox)continue;
+    const name=adicionais.find(a=>a.id===checkbox.value)?.nome;
+    const available=name!=='Hotelzinho'||group==='bernardo_samoieda_terra_bernese';
+    label.hidden=!available;
+    checkbox.disabled=!available;
+    if(!available)checkbox.checked=false;
+  }
+  if(byId('especiePet').value==='cachorro'&&byId('racaPet').value){
+    const name=nomesTabelas.find(x=>x.codigo===group)?.nome;
+    byId('racaMessage').textContent=name
+      ? 'Tabela de preços aplicada: '+name+'.'
+      : 'A precificação será aplicada conforme porte e pelagem.';
+  }
+}
 function updateSpecies(){
   const specie=byId("especiePet").value,select=byId("racaPet");
   select.innerHTML='<option value="">Selecione a raça</option>';
@@ -72,6 +98,7 @@ function updateSpecies(){
   }else{
     select.disabled=true;byId("racaMessage").textContent="Selecione primeiro a espécie do pet.";
   }
+  syncExtraVisibility();
 }
 function updateTransport(){
   const mode=byId("transporteBolhas").value;
@@ -88,6 +115,7 @@ function updateTransport(){
   if(!show){++cepLoad;byId("cepMessage").textContent="Ao digitar 8 números, buscaremos o endereço.";}
 }
 byId("especiePet").addEventListener("change",()=>{updateSpecies();scheduleEstimate();});
+byId("racaPet").addEventListener("change",()=>{syncExtraVisibility();scheduleEstimate();});
 byId("transporteBolhas").addEventListener("change",()=>{updateTransport();scheduleEstimate();});
 function error(message){byId("publicError").textContent=message;byId("publicError").hidden=false;byId("publicError").scrollIntoView({behavior:"smooth",block:"nearest"});}
 function clearError(){byId("publicError").hidden=true;}
@@ -123,7 +151,10 @@ async function loadServices(){
     const res=await fetch(endpoint,{method:"GET",cache:"no-store"});
     const data=await res.json();
     if(!res.ok || !Array.isArray(data.servicos)||!Array.isArray(data.racas)||!Array.isArray(data.adicionais))throw Error(data.erro||"Não foi possível consultar os serviços e raças.");
-    racas=data.racas;adicionais=data.adicionais;updateSpecies();
+    racas=data.racas;adicionais=data.adicionais;
+    tabelasRacas=Array.isArray(data.tabelas_racas)?data.tabelas_racas:[];
+    nomesTabelas=Array.isArray(data.nomes_tabelas)?data.nomes_tabelas:[];
+    updateSpecies();
     const extraList=byId('bookingAdditionalList');
     extraList.innerHTML='';
     for(const additional of adicionais){
@@ -138,7 +169,7 @@ async function loadServices(){
       const o=document.createElement("option");o.value=s.id;o.textContent=s.nome;select.append(o);
     }
     if(data.servicos.length===0)throw Error("Nenhum serviço disponível para agendamento.");
-    updateIncluded();scheduleEstimate();
+    syncExtraVisibility();updateIncluded();scheduleEstimate();
   }catch(e){error(e.message||"Não foi possível carregar os serviços.");select.innerHTML='<option value="">Serviços indisponíveis</option>';}
 }
 let cepLoad=0;
@@ -210,7 +241,7 @@ byId("newBooking").addEventListener("click",()=>{
   byId("requestCard").scrollIntoView({behavior:"smooth",block:"start"});
 });
 for(const id of ['portePet','pelagemPet','servicoPet']){
-  byId(id).addEventListener('change',()=>{updateIncluded();scheduleEstimate();});
+  byId(id).addEventListener('change',()=>{syncExtraVisibility();updateIncluded();scheduleEstimate();});
 }
 renderCalendar();
 updateTransport();

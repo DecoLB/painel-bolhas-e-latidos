@@ -1,3 +1,30 @@
+## V2.4.0 — Precificação automática por raça, porte e felinos
+
+**Fonte:** sete tabelas de banho/tosa e uma tabela veterinária fornecidas pelo cliente em 26/11/2026.
+
+- Precedência para cães: **raça especial cadastrada > tabela geral P/M/G + pelagem**. Golden Retriever, Chow Chow, Fila Brasileiro, Lobo, Husky Siberiano, Pastor Belga, Pastor Alemão, Rottweiller (grafia do catálogo), Labrador, Border Collie, São Bernardo, Samoieda, Terra Nova e Bernese possuem vinculação explícita.
+- **Lobo** e **Bernese** foram adicionados ao catálogo com a denominação exata do folheto, sem inferir sua classificação zoológica.
+- Para gatos, a regra **Gato/Felino** usa preço único por serviço, independente de porte e pelagem.
+- Cães não especiais continuam na tabela por porte P (até 10 kg), M (11 a 20 kg), G (21 a 40 kg) e pelagem curta/média/longa. P foi preservada sem alterações.
+- Serviços **ausentes** na tabela específica **não herdam preços genéricos**. Mostram `Sob consulta`; não atribuir R$ 0,00.
+- Novas tabelas de adicionais por M/G/grupos/felinos: preços fixos e `a_partir` calculados na prévia; `sob_consulta` não é somado automaticamente. TaxiDog (R$25 até 3 km, distância maior sob consulta) depende de confirmação e não é convertido em preço fechado sem quilometragem validada. Hotelzinho (R$70) é exclusivo do grupo São Bernardo/Samoieda/Terra Nova/Bernese, entra na prévia pelo valor fornecido e exige confirmação da unidade/período antes da contratação.
+- A **Edge Function** `solicitar-agendamento` utiliza raça, espécie, porte e pelagem na estimativa: **somente devolve o total**, sem valores unitários, e valida a raça no cadastro. O formulário recalcula ao alterar a raça.
+- O **snapshot gerencial** em `producao_valores` e o rateio das etapas utilizam o mesmo critério comercial. Os registros concluídos antes da implantação não são reprecificados.
+- Manejo especial possui tabela comercial de referência por grupo, mas permanece **somente informativo e sem cobrança automática**, conforme regra operacional vigente.
+- O catálogo de Vacinas, Consultas e Exames foi armazenado em **`catalogo_veterinario`**, restrito ao Administrador e com edição dos valores. **Não entra no agendamento público ou na fila operacional de banho/tosa** até definição formal desse processo.
+- RLS: novas tabelas financeiras protegidas por vínculo em `app_admins`; Operacional sem preços e sem acesso à manutenção. A função pública usa credencial de serviço apenas no servidor, retornando somente a estimativa agregada.
+- A retenção de sete dias e a governança de auditoria não foram alteradas.
+- Migração: `supabase/migrations/023_precificacao_por_raca_porte_felinos.sql`. Código: `tabelas-v24.js`, `tabelas-v24.css`, `agendamento.js`, `supabase/functions/solicitar-agendamento/index.ts`.
+
+### Cenários de homologação V2.4
+1. SRD P + banho curto = R$70; SRD M + banho longo = R$100; SRD G + banho e tosa máquina longo = R$135.
+2. Golden Retriever porte M + banho = R$130 (não R$80/90/100); Border Collie porte P + banho = R$120 (não R$70).
+3. Felino + banho e tosa máquina = R$110 independente do porte.
+4. Grupo São Bernardo + banho R$180 e Desembolo R$120 = estimativa R$300; Hotelzinho acrescenta R$70 por seleção, com confirmação necessária da unidade/período.
+5. Ausência de tosa na máquina na tabela do grupo Pastor Alemão/Border Collie deve resultar em valor sob consulta, **sem fallback por porte**.
+6. Conferir que o valor gravado na conclusão corresponde à tabela vigente e não é regravado ao editar tabela posteriormente.
+7. Operacional não recebe preço por atividade ou no telão; as permissões de acesso financeiro só permitem Administrador.
+
 ## V2.3.1 — Agendamentos de segunda a sábado (26/11/2026)
 
 - A janela de solicitação pública continua **de amanhã (D+1) até D+30 em dias corridos**. O calendário oculta os domingos sem ampliar a janela até 30 dias úteis.

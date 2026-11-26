@@ -1,4 +1,4 @@
-import {supabase,state,notify,esc,today} from './app.js?v=230';
+import {supabase,state,notify,esc,today} from './app.js?v=240';
 
 // O módulo só consulta valores após autenticação e reconhecimento como Administrador.
 // RLS em public.producao_valores impede a leitura pelo perfil Operacional.

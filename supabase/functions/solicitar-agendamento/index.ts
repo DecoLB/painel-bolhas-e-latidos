@@ -38,15 +38,18 @@ Deno.serve(async (req:Request):Promise<Response>=>{
   const db=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}});
 
   if(req.method==="GET"){
-    const [services,breeds,extras]=await Promise.all([
+    const [services,breeds,extras,mappings,groups]=await Promise.all([
       db.from("servicos").select("id,nome").eq("ativo",true).order("nome"),
       db.from("catalogo_racas").select("especie,nome").order("nome"),
-      db.from("catalogo_adicionais").select("id,nome").eq("ativo",true).order("nome")
+      db.from("catalogo_adicionais").select("id,nome").eq("ativo",true).order("nome"),
+      db.from("racas_grupos_precificacao").select("raca,grupo_codigo").eq("especie","cachorro"),
+      db.from("grupos_precificacao").select("codigo,nome")
     ]);
-    if(services.error||breeds.error||extras.error)
+    if(services.error||breeds.error||extras.error||mappings.error||groups.error)
       return respond({erro:"Não foi possível carregar os dados do formulário."},503);
-    // Não enviar preços unitários ao navegador.
-    return respond({servicos:services.data||[],racas:breeds.data||[],adicionais:extras.data||[]});
+    // Somente associação raça/grupo; nenhum preço unitário é enviado ao navegador.
+    return respond({servicos:services.data||[],racas:breeds.data||[],
+      adicionais:extras.data||[],tabelas_racas:mappings.data||[],nomes_tabelas:groups.data||[]});
   }
 
   let input:Record<string,unknown>;
@@ -72,45 +75,62 @@ Deno.serve(async (req:Request):Promise<Response>=>{
   const coat=text(input.pelagem,8);
   if(!["curto","medio","longo"].includes(coat))return respond({erro:"Informe a pelagem do pet."},400);
   if(isEstimate){
-    if(!["cachorro","gato"].includes(input.especie) ||
-      !["pequeno","medio","grande"].includes(input.porte) ||
+    const especie=text(input.especie,10),raca=text(input.raca,100),porte=text(input.porte,7);
+    if(!["cachorro","gato"].includes(especie) ||
+      !["pequeno","medio","grande"].includes(porte) ||
+      !raca || (especie==="gato"&&raca!=="Gato/Felino") ||
       !validId(input.servico_id) || typeof input.transporte_bolhas!=="boolean"){
-      return respond({erro:"Escolha espécie, porte, serviço e transporte para calcular a estimativa."},400);
+      return respond({erro:"Escolha espécie, raça, porte, serviço e transporte para a estimativa."},400);
     }
+    const [{data:breed,error:breedError},{data:override,error:groupError}]=await Promise.all([
+      db.from("catalogo_racas").select("nome").eq("especie",especie).eq("nome",raca).maybeSingle(),
+      especie==="cachorro"?
+        db.from("racas_grupos_precificacao").select("grupo_codigo").eq("especie","cachorro").eq("raca",raca).maybeSingle():
+        Promise.resolve({data:null,error:null})
+    ]);
+    if(breedError||groupError)return respond({erro:"Não foi possível localizar a tabela desta raça."},503);
+    if(!breed)return respond({erro:"Raça não cadastrada."},400);
+    const grupo=especie==="gato"?"felino":override?.grupo_codigo||
+      ({pequeno:"porte_p",medio:"porte_m",grande:"porte_g"} as Record<string,string>)[porte];
+    const special=grupo!=="porte_p"&&grupo!=="porte_m"&&grupo!=="porte_g";
+    const ids=selected.length?selected:["00000000-0000-0000-0000-000000000000"];
     const [service,rate,availableExtras,extraRates]=await Promise.all([
       db.from("servicos").select("id").eq("id",input.servico_id).eq("ativo",true).maybeSingle(),
-      db.from("precos_servicos").select("valor_centavos")
-        .eq("servico_id",input.servico_id).eq("especie",input.especie)
-        .eq("porte",input.porte).eq("pelagem",coat).maybeSingle(),
-      db.from("catalogo_adicionais").select("id").eq("ativo",true).in("id",selected.length?selected:["00000000-0000-0000-0000-000000000000"]),
-      db.from("precos_adicionais").select("adicional_id,valor_centavos,modalidade,faixa_aplicacao").in("adicional_id",selected.length?selected:["00000000-0000-0000-0000-000000000000"])
+      special?
+        db.from("precos_servicos_grupos").select("valor_centavos")
+          .eq("grupo_codigo",grupo).eq("servico_id",input.servico_id).maybeSingle():
+        db.from("precos_servicos").select("valor_centavos")
+          .eq("servico_id",input.servico_id).eq("especie",especie)
+          .eq("porte",porte).eq("pelagem",coat).maybeSingle(),
+      db.from("catalogo_adicionais").select("id,nome").eq("ativo",true).in("id",ids),
+      grupo==="porte_p"?
+        db.from("precos_adicionais").select("adicional_id,valor_centavos,modalidade").in("adicional_id",ids):
+        db.from("precos_adicionais_grupos").select("adicional_id,valor_centavos,modalidade")
+          .eq("grupo_codigo",grupo).in("adicional_id",ids)
     ]);
     if(service.error||rate.error||availableExtras.error||extraRates.error)
       return respond({erro:"Não foi possível calcular a estimativa no momento."},503);
     if(!service.data || availableExtras.data?.length!==selected.length)
       return respond({erro:"Verifique os serviços selecionados."},400);
+    // Hotelzinho foi recebido apenas para o grupo São Bernardo / Samoieda / Terra Nova / Bernese.
+    if(availableExtras.data?.some(x=>x.nome==="Hotelzinho")&&grupo!=="bernardo_samoieda_terra_bernese")
+      return respond({erro:"Hotelzinho não consta da tabela desta raça."},400);
     let total=rate.data?.valor_centavos??0;
     let sob_consulta=!rate.data;
     let tem_minimo=false;
-    // Todos os preços de adicionais recebidos pertencem exclusivamente à tabela P (cães até 10kg).
-    // Mesmo que haja valor para um serviço principal futuro de M/G, não reutilizar adicionais de P.
-    const tabelaP=input.especie==="cachorro" && input.porte==="pequeno";
     for(const id of selected){
       const item=extraRates.data?.find(x=>x.adicional_id===id);
-      if(!tabelaP || !item || item.faixa_aplicacao!=="cachorro_P_ate_10kg" ||
-        item.modalidade==="sob_consulta" || item.valor_centavos==null){
+      if(!item||item.modalidade==="sob_consulta"||item.valor_centavos==null){
         sob_consulta=true;continue;
       }
       total+=item.valor_centavos;
       if(item.modalidade==="a_partir"){tem_minimo=true;sob_consulta=true;}
     }
-    // Transporte é sempre conferido pela equipe: não inferir quilometragem nem tarifa.
     if(input.transporte_bolhas)sob_consulta=true;
     return respond({
       total_estimado_centavos:total,
-      tem_parcial:total>0,
-      sob_consulta,
-      tem_minimo,
+      tem_parcial:rate.data!=null,
+      sob_consulta,tem_minimo,
       aviso:"Os valores apresentados são uma prévia, que será confirmada quando entrarem em contato."
     });
   }
@@ -167,6 +187,16 @@ Deno.serve(async (req:Request):Promise<Response>=>{
   const {data:validBreed,error:breedError}=await db.from("catalogo_racas")
     .select("nome").eq("especie",especie).eq("nome",raca).maybeSingle();
   if(breedError || !validBreed)return respond({erro:"A raça selecionada não está disponível."},400);
+  const hotelIds=selected.length?await db.from("catalogo_adicionais")
+    .select("id").eq("nome","Hotelzinho").in("id",selected):{data:[],error:null};
+  if(hotelIds.error)return respond({erro:"Não foi possível validar os adicionais."},503);
+  if(hotelIds.data?.length){
+    const {data:grupoRaca,error:grupoErr}=await db.from("racas_grupos_precificacao")
+      .select("grupo_codigo").eq("especie",especie).eq("raca",raca).maybeSingle();
+    if(grupoErr)return respond({erro:"Não foi possível validar a categoria da raça."},503);
+    if(grupoRaca?.grupo_codigo!=="bernardo_samoieda_terra_bernese")
+      return respond({erro:"Hotelzinho não está disponível para a raça selecionada."},400);
+  }
 
   const {error}=await db.from("solicitacoes_agendamento").insert({
     tutor_nome,pet_nome,porte,especie,raca,transporte_bolhas,servico_id,data_desejada,
