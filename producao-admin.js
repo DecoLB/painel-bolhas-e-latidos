@@ -206,11 +206,13 @@ function render(){
     .reduce((n,x)=>n+x.finance.valor_referencia_centavos,0);
   const execution=shown.map(x=>minutes(x.iniciado_em,x.concluido_em)).filter(x=>x!==null);
   const waiting=shown.map(x=>minutes(x.criado_em,x.iniciado_em)).filter(x=>x!==null);
+  const cycle=shown.map(x=>minutes(x.criado_em,x.concluido_em)).filter(x=>x!==null);
   set('prodTotal',currency(sum));set('prodCompleted',String(shown.length));
   set('prodTicket',complete.length?currency(Math.round(sum/complete.length)):'—');
   set('prodCoveragePct',shown.length?percent(100*complete.length/shown.length):'—');
   set('prodCoverageDetail',complete.length+' de '+shown.length+' conclusão(ões) com preço fechado');
   set('prodExecution',mins(mean(execution)));set('prodWait',mins(mean(waiting)));
+  set('prodCycle',mins(mean(cycle)));
   set('prodPartial',currency(partialSum));set('prodUnpriced',String(unpriced.length));
 
   const byProfValue=group(complete,r=>professionalName(r.profissional_id),r=>r.finance.valor_referencia_centavos);
