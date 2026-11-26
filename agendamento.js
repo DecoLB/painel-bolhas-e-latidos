@@ -17,7 +17,8 @@ function updateIncluded(){
 const money=cents=>(cents/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 function scheduleEstimate(){
   clearTimeout(estimateTimer);
-  const required=['especiePet','portePet','pelagemPet','servicoPet','transporteBolhas'];
+  // A prévia básica aparece ao escolher serviço/porte/pelagem; transporte só a ajusta.
+  const required=['especiePet','portePet','pelagemPet','servicoPet'];
   if(required.some(id=>!byId(id).value)){
     ++estimateToken;
     byId('estimateTotal').textContent='Selecione serviço, pelagem e transporte';
@@ -41,9 +42,10 @@ function scheduleEstimate(){
       byId('estimateTotal').textContent=result.sob_consulta
         ? (result.tem_parcial?'Estimativa parcial: '+money(result.total_estimado_centavos):'Valor sob consulta')
         : 'Total estimado: '+money(result.total_estimado_centavos);
-      byId('estimateInfo').textContent=result.sob_consulta
+      byId('estimateInfo').textContent=(result.sob_consulta
         ? 'Há itens ou condições sem preço final definido. A equipe confirmará o valor completo.'
-        : 'Estimativa para o conjunto de serviços selecionados.';
+        : 'Estimativa para o conjunto de serviços selecionados.')
+        +(byId('transporteBolhas').value===''?' Informe se precisará de transporte; isso pode alterar a estimativa.':'');
     }catch(e){
       if(token!==estimateToken)return;
       byId('estimateTotal').textContent='Estimativa indisponível';
