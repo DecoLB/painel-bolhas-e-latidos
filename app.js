@@ -495,7 +495,7 @@ function bindEvents() {
   document.querySelectorAll('[data-page]').forEach(button=>button.addEventListener('click',()=>switchPage(button.dataset.page)));
   document.querySelectorAll('[data-admin-tab]').forEach(button=>button.addEventListener('click',()=>switchAdminTab(button.dataset.adminTab)));
   byId('reportDate').addEventListener('change',renderReport);
-  byId('printBtn').addEventListener('click',()=>window.print());
+  byId('printBtn').addEventListener('click',()=>document.dispatchEvent(new Event('bolhas:print-daily')));
   byId('serviceForm').addEventListener('submit',async e=>{
     e.preventDefault();
     const nome=byId('serviceName').value.trim();

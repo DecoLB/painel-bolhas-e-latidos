@@ -1,4 +1,4 @@
-import {supabase,state,notify,esc} from './app.js?v=240';
+import {supabase,state,notify,esc} from './app.js?v=250';
 const $=id=>document.getElementById(id);
 const brl=c=>c==null?'':(c/100).toFixed(2);
 const cents=s=>s===''?null:Math.round(Number(s)*100);

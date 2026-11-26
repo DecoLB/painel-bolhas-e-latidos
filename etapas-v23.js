@@ -1,4 +1,4 @@
-import {supabase,state,notify,esc,today,refresh} from './app.js?v=240';
+import {supabase,state,notify,esc,today,refresh} from './app.js?v=250';
 
 // V2.3: atividades e executores, sem preços nas telas operacionais.
 const $=id=>document.getElementById(id);
@@ -343,11 +343,7 @@ $('v23AuditDate').addEventListener('change',renderAudit);
 for(const id of ['prodPeriod','prodStartDate','prodEndDate','prodProfessional','prodService','prodCoverage'])
  $(id).addEventListener('change',renderProduction);
 $('v23AuditRefresh').addEventListener('click',loadAdmin);
-$('v23Print').addEventListener('click',()=>{
- document.body.classList.add('v23-print-fichas');
- const done=()=>{document.body.classList.remove('v23-print-fichas');window.removeEventListener('afterprint',done);};
- window.addEventListener('afterprint',done);window.print();
-});
+$('v23Print').addEventListener('click',()=>document.dispatchEvent(new Event('bolhas:print-fichas')));
 document.querySelectorAll('[data-admin-tab="conferencia"],[data-admin-tab="producao"]').forEach(button=>
  button.addEventListener('click',()=>{if(isAdmin())loadAdmin();}));
 window.addEventListener('bolhas:authenticated',()=>{renderEntryPlan();renderQueues();if(isAdmin())loadAdmin();});

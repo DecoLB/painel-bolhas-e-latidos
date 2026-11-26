@@ -1,4 +1,4 @@
-import {supabase,state,notify,esc,today} from './app.js?v=240';
+import {supabase,state,notify,esc,today} from './app.js?v=250';
 
 let solicitacoes=[], programados=new Map(), selectedDate=null, loading=false, channel=null;
 const byId=id=>document.getElementById(id);
@@ -167,7 +167,7 @@ function printSchedule(){
     +'<table class="booking-print-table"><thead><tr><th>#</th><th>Pet / Tutor</th>'
     +'<th>Porte</th><th>Serviço</th><th>Transporte</th><th>Endereço</th><th>Situação</th></tr></thead>'
     +'<tbody>'+(rows||'<tr><td colspan="7">Nenhum agendamento aprovado nesta data.</td></tr>')+'</tbody></table>'
-    +'<footer class="booking-print-footer">Versão 2.3.1 · Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA · Relatório de programação · Impresso em '
+    +'<footer class="booking-print-footer">Versão 2.5.0 · Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA · Relatório de programação · Impresso em '
     +esc(new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Sao_Paulo'}).format(new Date()))
     +'</footer>';
   sheet.hidden=false;

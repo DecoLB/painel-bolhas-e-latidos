@@ -1,3 +1,20 @@
+## V2.5.0 — Padronização de todas as impressões (26/11/2026)
+
+**Impressões suportadas por três ações existentes:**
+- Administrador → Visão gerencial → **Imprimir relatório diário**: gera planilha tabular com pet/tutor, espécie/raça, serviço/adicionais, manejo/transporte, executores, horários, durações e status. A data selecionada e o filtro atual do relatório são preservados.
+- Administrador → Calendário → **Imprimir programação do dia**: conserva os agendamentos aprovados na data, situação de entrada/recusa, endereço e transporte, com cabeçalho e colunas padronizadas.
+- Administrador → Conferência de fichas → **Imprimir fichas**: gera tabela de atividades por animal, executor(es) confirmado(s), horários, status de conferência e **valor integral do produto**, além de linha de **valor único do atendimento** (sem soma indevida de produto compartilhado).
+
+**Layout**: A4 horizontal, margens de 9–11 mm, tabela com largura fixa adaptada à página, repetição do cabeçalho da tabela a cada folha, células com quebra de texto controlada, linhas e grupos de um mesmo animal não divididos quando a altura permitir, fonte compacta e legível, sem rolagem nem cortes laterais. Quando existem mais registros do que cabem fisicamente numa folha, o navegador cria páginas adicionais; nunca se promete imprimir todos os registros em uma única folha.
+
+**Identificação**: logo, título, data de referência, quantidade de registros, data/hora de impressão e rodapé com **Versão 2.5.0 — Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA**.
+
+**Segurança e rastreabilidade**: a impressão permanece acessível somente ao Administrador; dados monetários consultados via RLS apenas para esse perfil. Os relatórios não alteram atendimento, valores, retenção, calendário ou auditoria. A impressão financeira respeita a V2.4.1, sem qualquer comissão ou rateio. Na tabela de fichas, o mesmo produto pode aparecer em mais de uma atividade, mas o total do atendimento é mostrado uma única vez.
+
+**Arquivos**: `impressao-v25.js`, `impressao-v25.css`, `app.js`, `etapas-v23.js`, `agendamento-admin.js` e `index.html`. Scripts que importam `app.js` foram alinhados na mesma versão `?v=250` para impedir inicialização duplicada do módulo após publicação.
+
+**Homologação sugerida:** imprimir as três visões com 1, 10 e 30+ linhas; verificar Prévia de Impressão em A4 paisagem, o cabeçalho nas páginas seguintes, nenhuma linha partida ou coluna cortada e o rodapé; conferir inclusive uma ficha com Banho/Tosa executados por pessoas diferentes.
+
 ## V2.4.1 — Valor integral por produto executado (26/11/2026)
 
 **Regra vigente:** não há cálculo nem sugestão de comissão ou divisão financeira. O Administrador consulta o preço cheio do **produto contratado**, vinculado às atividades executadas e a cada profissional confirmado.

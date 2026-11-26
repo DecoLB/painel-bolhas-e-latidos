@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="./producao-v22.css?v=220">
   <link rel="stylesheet" href="./etapas-v23.css?v=231">
   <link rel="stylesheet" href="./tabelas-v24.css?v=240">
+  <link rel="stylesheet" href="./impressao-v25.css?v=250">
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -43,7 +44,7 @@
       <p id="setupInfo" class="setup-info" hidden>O banco ainda não foi conectado. Configure o projeto Supabase em config.js para habilitar o acesso.</p>
       
     </form>
-    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 2.4.1</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 2.5.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
   </section>
   <div id="appShell" class="shell" hidden>
     <header class="topbar">
@@ -392,19 +393,22 @@
         <div class="page-heading no-print"><div><span class="eyebrow">PAINEL OPERACIONAL</span><h1>Visão do telão</h1><p>Exibição contínua das filas de atendimento.</p></div><button id="fullscreenBtn" type="button" class="btn btn-outline">Tela cheia</button></div>
         <div class="tv-header"><div class="brand"><img class="brand-logo" src="./assets/logo.webp" alt="Logo Bolhas & Latidos" onerror="this.hidden=true"><span class="brand-fallback">Bolhas <em>&</em> Latidos</span></div><div class="tv-now" id="tvClock"></div></div>
         <div class="tv-grid" id="tvGrid" data-density="single"><div class="tv-column farol-warning"><h2>Aguardando <span id="tvWaitingCount">0</span></h2><div id="tvWaiting" class="tv-list"></div></div><div class="tv-column farol-success"><h2>Em execução <span id="tvActiveCount">0</span></h2><div id="tvActive" class="tv-list"></div></div></div>
-        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 2.4.1</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 2.5.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
       </section>
     </main>
-    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 2.4.1</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
+    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 2.5.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
   </div>
   <section id="bookingPrintSheet" hidden aria-label="Ficha de programação para impressão"></section>
+  <section id="dailyPrintSheet" hidden aria-label="Relatório diário tabular para impressão"></section>
+  <section id="auditPrintSheet" hidden aria-label="Conferência de fichas tabular para impressão"></section>
   <script src="./config.js?v=20261125-2"></script>
-  <script type="module" src="./app.js?v=240"></script>
-  <script type="module" src="./etapas-v23.js?v=241"></script>
-  <script type="module" src="./producao-admin.js?v=241"></script>
-  <script type="module" src="./comercial-admin.js?v=240"></script>
-  <script type="module" src="./tabelas-v24.js?v=240"></script>
-  <script type="module" src="./agendamento-admin.js?v=240"></script>
-  <script type="module" src="./programacao-entrada.js?v=240"></script>
+  <script type="module" src="./app.js?v=250"></script>
+  <script type="module" src="./etapas-v23.js?v=250"></script>
+  <script type="module" src="./producao-admin.js?v=250"></script>
+  <script type="module" src="./comercial-admin.js?v=250"></script>
+  <script type="module" src="./tabelas-v24.js?v=250"></script>
+  <script type="module" src="./agendamento-admin.js?v=250"></script>
+  <script type="module" src="./programacao-entrada.js?v=250"></script>
+  <script type="module" src="./impressao-v25.js?v=250"></script>
 </body>
 </html>
