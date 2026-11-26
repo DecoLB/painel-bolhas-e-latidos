@@ -1,4 +1,4 @@
-import {supabase,state,notify,esc,today,refresh} from './app.js?v=220';
+import {supabase,state,notify,esc,today,refresh} from './app.js?v=230';
 
 const byId=id=>document.getElementById(id);
 const plusDays=(iso,n)=>{const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
@@ -12,6 +12,27 @@ const serviceName=id=>state.services.find(s=>s.id===id)?.nome||'Serviço cadastr
 const additionalNames=ids=>(ids||[]).map(id=>state.additionalCatalog.find(x=>x.id===id)?.nome||'Adicional indisponível').join(', ')||'Nenhum';
 const manejoOptions='<option value="">Selecione o manejo</option><option value="nao_se_aplica">Não se aplica</option><option value="ansioso">Pet Ansioso</option><option value="agressivo">Pet Agressivo</option><option value="idoso">Pet Idoso</option>';
 let bookings=[],busy=false,refreshing=false;
+const preSelections=new Map();
+function plannedRows(r){
+ const service=serviceName(r.servico_id);
+ const norm=service.toLocaleLowerCase('pt-BR');
+ const primary=norm.includes('banho')&&norm.includes('tosa')?
+ [{key:'principal:1',nome:'Banho'},{key:'principal:2',
+   nome:norm.includes('máquina')||norm.includes('maquina')?'Tosa na Máquina':
+    norm.includes('tesoura')?'Tosa na Tesoura':norm.includes('higi')?'Tosa Higiênica':'Tosa'}]:
+ [{key:'principal:1',nome:service}];
+ const extras=(r.adicionais||[]).map(id=>({key:'adicional:'+id,
+   nome:state.additionalCatalog.find(a=>a.id===id)?.nome||'Adicional'}));
+ return '<div class="v23-entry-plan"><h3>Profissionais previstos por atividade (opcional)</h3>'
+   +[...primary,...extras].map(stage=>
+    '<div class="v23-plan-item"><strong>'+esc(stage.nome)+'</strong><div class="v23-person-grid">'
+    +state.professionals.filter(p=>p.ativo).map(p=>
+      '<label class="v23-person"><input data-v23-preplan="'+esc(r.programacao_id)+'"'
+      +' data-v23-plan-key="'+esc(stage.key)+'" type="checkbox" value="'+esc(p.id)+'"'
+      +(preSelections.get(r.programacao_id+':'+stage.key)?.includes(p.id)?' checked':'')+'>'
+      +'<span>'+esc(p.sigla)+' · '+esc(p.nome)+'</span></label>').join('')
+    +'</div></div>').join('')+'</div>';
+}
 
 function permitted(){return state.role==='admin'||state.role==='operacional'}
 function datePicker(){
@@ -67,6 +88,7 @@ function render(day=datePicker()){
       footer='<div class="preentrada-actions">'
         +'<label class="preentrada-manejo-label">Manejo especial (somente informativo)'
         +'<select data-checkin-manejo="'+esc(r.programacao_id)+'" required>'+manejoOptions+'</select></label>'+
+        plannedRows(r)+
         '<button type="button" class="btn btn-primary" data-checkin="'+esc(r.programacao_id)+'">✓ Dar entrada</button>'+
         '<button type="button" class="btn btn-danger" data-open-reject="'+esc(r.programacao_id)+'">Recusar atendimento</button>'+
         '</div><div class="reject-form" data-reject-form="'+esc(r.programacao_id)+'" hidden>'+
@@ -113,9 +135,24 @@ async function checkin(id){
   if(!confirm('Confirmar a chegada de '+r.pet_nome+' e enviar para a fila de espera?'))return;
   busy=true;
   try{
-    const {error}=await supabase.rpc('registrar_entrada_programada_v3',{p_programacao_id:id,p_manejo:manejo});
+    const {data:registroId,error}=await supabase.rpc('registrar_entrada_programada_v3',{p_programacao_id:id,p_manejo:manejo});
     if(error)throw error;
-    notify('Entrada confirmada: '+r.pet_nome+' já está na fila de espera.','success');
+    // A entrada é definitiva; eventual falha no planejamento não apaga o registro.
+    try{
+      const {data:created,error:etapaErr}=await supabase.from('atendimento_etapas')
+        .select('id,tipo,ordem,adicional_id').eq('atendimento_id',registroId);
+      if(etapaErr)throw etapaErr;
+      for(const e of created||[]){
+        const key=e.tipo==='principal'?'principal:'+e.ordem:'adicional:'+e.adicional_id;
+        const selected=preSelections.get(id+':'+key)||[];
+        if(selected.length){
+          const {error:planErr}=await supabase.rpc('planejar_etapa_v23',{p_etapa_id:e.id,p_profissionais:selected});
+          if(planErr)throw planErr;
+        }
+      }
+      for(const key of [...preSelections.keys()])if(key.startsWith(id+':'))preSelections.delete(key);
+      notify('Entrada confirmada e atividades encaminhadas à fila.','success');
+    }catch(planErr){notify('Entrada confirmada, mas o planejamento precisa ser revisado: '+planErr.message,'error');}
     await refresh();
   }catch(e){notify('Não foi possível registrar a entrada: '+e.message,'error');}
   finally{busy=false;await loadBookings();}
@@ -158,6 +195,13 @@ container.addEventListener('click',event=>{
   if(rejectBtn)reject(rejectBtn.dataset.confirmReject);
 });
 container.addEventListener('change',event=>{
+  const planned=event.target.closest('[data-v23-preplan]');
+  if(planned){
+    const k=planned.dataset.v23Preplan+':'+planned.dataset.v23PlanKey;
+    const ids=[...container.querySelectorAll('[data-v23-preplan="'+planned.dataset.v23Preplan+'"][data-v23-plan-key="'+planned.dataset.v23PlanKey+'"]:checked')].map(x=>x.value);
+    preSelections.set(k,ids);
+    return;
+  }
   const sel=event.target.closest('[data-reject-reason]');
   if(!sel)return;
   const id=sel.dataset.rejectReason;

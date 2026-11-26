@@ -1,4 +1,4 @@
-import {supabase,state,notify,esc,today} from './app.js?v=220';
+import {supabase,state,notify,esc,today} from './app.js?v=230';
 
 // O módulo só consulta valores após autenticação e reconhecimento como Administrador.
 // RLS em public.producao_valores impede a leitura pelo perfil Operacional.
@@ -24,7 +24,24 @@ const coverageLabel={
 const coverageBadge={
   completo:'success',parcial:'warning',sob_consulta:'warning',sem_dados:'neutral'
 };
-let rows=[],shown=[],loading=false,loadVersion=0,loadTimer=null,loadedOnce=false;
+let rows=[],shown=[],stageRates=[],loading=false,loadVersion=0,loadTimer=null,loadedOnce=false;
+const stagesOf=id=>state.etapas.filter(x=>x.atendimento_id===id);
+const confirmedOn=id=>state.etapaProfissionais.filter(p=>p.etapa_id===id&&p.papel==='confirmado');
+const executorsOf=r=>{
+ const unique=new Set(stagesOf(r.id).flatMap(x=>confirmedOn(x.id).map(p=>p.profissional_id)));
+ return unique.size?[...unique].map(professionalName).join(', '):professionalName(r.profissional_id);
+};
+async function fetchStageRates(attendances){
+ const ids=new Set(attendances.map(a=>a.id)),stages=state.etapas.filter(e=>ids.has(e.atendimento_id));
+ const result=[];
+ for(let i=0;i<stages.length;i+=100){
+  const {data,error}=await supabase.from('etapa_rateios').select('etapa_id,profissional_id,valor_centavos,percentual')
+   .in('etapa_id',stages.slice(i,i+100).map(x=>x.id));
+  if(error)throw error;
+  result.push(...(data||[]));
+ }
+ return result;
+}
 const inAdmin=()=>state.role==='admin'&&!$('appShell').hidden;
 const isVisible=()=>inAdmin()&& !$('admin-producao').hidden&&!$('page-admin').hidden;
 const note=(value,error=false)=>{const node=$('prodMessage');node.textContent=value;node.classList.toggle('prod-error',error);};
@@ -83,7 +100,9 @@ async function load(){
     syncOptions();
     const completed=await fetchAllCompleted(range.start,range.end);
     const snapshots=await fetchSnapshots(completed.data);
+    const rates=await fetchStageRates(completed.data);
     if(version!==loadVersion)return;
+    stageRates=rates;
     rows=completed.data.map(a=>({
       ...a,
       finance:snapshots.get(a.id)||{
@@ -107,7 +126,8 @@ async function load(){
 function listFilter(){
   const professional=$('prodProfessional').value,service=$('prodService').value,
     coverage=$('prodCoverage').value;
-  return rows.filter(x=>(!professional||x.profissional_id===professional)
+  return rows.filter(x=>(!professional||x.profissional_id===professional||
+      stagesOf(x.id).some(e=>confirmedOn(e.id).some(p=>p.profissional_id===professional)))
     &&(!service||x.servico_id===service)
     &&(!coverage||x.finance.cobertura===coverage));
 }
@@ -136,10 +156,9 @@ function barChart(id,data,{valueKey='value',format=n=>String(n),empty='Sem regis
   }).join('');
 }
 function set(id,val){$(id).textContent=val;}
-function renderInsights(data,complete,unpriced){
-  const mapProfessional=group(complete,r=>professionalName(r.profissional_id),r=>r.finance.valor_referencia_centavos);
-  mapProfessional.sort((a,b)=>b.value-a.value);
-  const allProfessional=group(data,r=>professionalName(r.profissional_id),()=>1).sort((a,b)=>b.value-a.value);
+function renderInsights(data,complete,unpriced,byProfValue,byProfVolume){
+  const mapProfessional=[...byProfValue].sort((a,b)=>b.value-a.value);
+  const allProfessional=[...byProfVolume].sort((a,b)=>b.value-a.value);
   const serviceVolume=group(data,r=>serviceName(r.servico_id),()=>1).sort((a,b)=>b.value-a.value);
   const noDim=data.filter(x=>!x.especie||!x.porte||!x.pelagem).length;
   const pricePartial=data.filter(x=>x.finance.cobertura==='parcial').length;
@@ -188,7 +207,7 @@ function renderTable(data){
     const badge='<span class="tag farol-tag status-'+(coverageBadge[f.cobertura]||'neutral')+'"><span class="farol-dot"></span>'+esc(coverage)+'</span>';
     const note=f.observacao?(f.observacao+' · '):'';
     return '<tr><td>'+esc(date)+'</td><td>'+esc(r.animal_nome)+'</td>'
-      +'<td>'+esc(professionalName(r.profissional_id))+'</td>'
+      +'<td>'+esc(executorsOf(r))+'</td>'
       +'<td>'+esc(serviceName(r.servico_id))+'</td><td>'+esc(r.porte||'N/I')+' / '+esc(r.pelagem||'N/I')+'</td>'
       +'<td>'+esc(extraNames(r.adicionais).join(', ')||'Nenhum')+'</td>'
       +'<td>'+esc(mins(minutes(r.iniciado_em,r.concluido_em)))+'</td>'
@@ -201,7 +220,13 @@ function render(){
   shown=listFilter();
   const complete=shown.filter(x=>x.finance.cobertura==='completo'&&Number.isInteger(x.finance.valor_referencia_centavos));
   const unpriced=shown.filter(x=>x.finance.cobertura!=='completo');
-  const sum=complete.reduce((n,x)=>n+x.finance.valor_referencia_centavos,0);
+  const selectedProfessional=$('prodProfessional').value;
+  const completeIds=new Set(complete.map(x=>x.id));
+  const sum=complete.reduce((n,x)=>{
+    if(!selectedProfessional||!stagesOf(x.id).length)return n+x.finance.valor_referencia_centavos;
+    return n+stagesOf(x.id).flatMap(e=>stageRates.filter(rt=>rt.etapa_id===e.id&&
+      rt.profissional_id===selectedProfessional)).reduce((a,rt)=>a+(rt.valor_centavos||0),0);
+  },0);
   const partialSum=shown.filter(x=>x.finance.cobertura==='parcial'&&Number.isInteger(x.finance.valor_referencia_centavos))
     .reduce((n,x)=>n+x.finance.valor_referencia_centavos,0);
   const execution=shown.map(x=>minutes(x.iniciado_em,x.concluido_em)).filter(x=>x!==null);
@@ -215,19 +240,38 @@ function render(){
   set('prodCycle',mins(mean(cycle)));
   set('prodPartial',currency(partialSum));set('prodUnpriced',String(unpriced.length));
 
-  const byProfValue=group(complete,r=>professionalName(r.profissional_id),r=>r.finance.valor_referencia_centavos);
-  const byProfVolume=group(shown,r=>professionalName(r.profissional_id),()=>1);
+  const legacyComplete=complete.filter(r=>!stagesOf(r.id).length);
+  const legacyAll=shown.filter(r=>!stagesOf(r.id).length);
+  const v23RateItems=stageRates.filter(rt=>state.etapas.some(e=>
+     e.id===rt.etapa_id&&completeIds.has(e.atendimento_id)));
+  const byProfValue=group([
+    ...legacyComplete.map(r=>({name:professionalName(r.profissional_id),valor:r.finance.valor_referencia_centavos})),
+    ...v23RateItems.filter(rt=>rt.valor_centavos!=null).map(rt=>({name:professionalName(rt.profissional_id),valor:rt.valor_centavos}))
+  ],r=>r.name,r=>r.valor);
+  const shownIds=new Set(shown.map(r=>r.id));
+  const v23ExecutorItems=state.etapas.filter(e=>e.status==='concluido'&&shownIds.has(e.atendimento_id))
+    .flatMap(e=>confirmedOn(e.id).map(p=>({name:professionalName(p.profissional_id)})));
+  const byProfVolume=group([...legacyAll.map(r=>({name:professionalName(r.profissional_id)})),
+    ...v23ExecutorItems],r=>r.name,()=>1);
   const byServiceVolume=group(shown,r=>serviceName(r.servico_id),()=>1);
   const byServiceValue=group(complete,r=>serviceName(r.servico_id),r=>r.finance.valor_referencia_centavos);
   const extraCount=new Map();
   for(const r of shown)for(const name of extraNames(r.adicionais))extraCount.set(name,(extraCount.get(name)||0)+1);
   const byExtras=[...extraCount].map(([name,value])=>({name,value}));
   const byTime=new Map();
-  for(const r of shown){
+  for(const r of shown.filter(x=>!stagesOf(x.id).length)){
     const time=minutes(r.iniciado_em,r.concluido_em);
     if(time===null)continue;
     const key=professionalName(r.profissional_id),v=byTime.get(key)||{name:key,total:0,count:0};
     v.total+=time;v.count++;byTime.set(key,v);
+  }
+  for(const e of state.etapas.filter(x=>x.status==='concluido'&&shownIds.has(x.atendimento_id))){
+    const time=minutes(e.iniciado_em,e.concluido_em);
+    if(time===null)continue;
+    for(const staff of confirmedOn(e.id)){
+      const key=professionalName(staff.profissional_id),v=byTime.get(key)||{name:key,total:0,count:0};
+      v.total+=time;v.count++;byTime.set(key,v);
+    }
   }
   const averageTimes=[...byTime.values()].map(x=>({name:x.name,value:Math.round(x.total/x.count)}));
   barChart('prodProfessionalValue',byProfValue,{format:currency,empty:'Sem produção com preço fechado'});
@@ -236,7 +280,8 @@ function render(){
   barChart('prodServiceValue',byServiceValue,{format:currency,empty:'Sem serviços com preço fechado'});
   barChart('prodAdditionalVolume',byExtras,{empty:'Sem adicionais registrados'});
   barChart('prodProfessionalTime',averageTimes,{format:mins,empty:'Sem durações completas'});
-  renderInsights(shown,complete,unpriced);renderDaily(shown);renderTable(shown);
+  renderInsights(shown,complete,unpriced,byProfValue,byProfVolume);
+  renderDaily(shown);renderTable(shown);
   $('prodCsv').disabled=!shown.length;
 }
 function exportCsv(){
@@ -249,7 +294,7 @@ function exportCsv(){
   const items=shown.map(r=>{
     const f=r.finance;
     return [
-      r.concluido_em,r.animal_nome,professionalName(r.profissional_id),serviceName(r.servico_id),
+      r.concluido_em,r.animal_nome,executorsOf(r),serviceName(r.servico_id),
       r.especie,r.porte,r.pelagem,extraNames(r.adicionais).join(' / '),
       minutes(r.criado_em,r.iniciado_em),minutes(r.iniciado_em,r.concluido_em),
       coverageLabel[f.cobertura],

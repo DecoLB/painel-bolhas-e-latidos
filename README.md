@@ -1,3 +1,38 @@
+## V2.3.0 — Produção por atividade, múltiplos prestadores e auditoria
+
+### Novo fluxo
+- **Entrada:** um serviço comercial composto de Banho + Tosa gera duas atividades; adicionais contratados geram atividades próprias. A equipe pode indicar um ou mais profissionais **previstos** por atividade (opcional). Nos agendamentos aprovados, essa indicação também está disponível no check-in do dia.
+- **Prestador:** cada atividade pode ser iniciada por um ou vários profissionais. A finalização obriga a confirmar os **executores reais**; o mesmo profissional pode realizar todas ou somente parte das atividades. O animal só muda para `concluido` quando todas as atividades terminam.
+- **Telão:** mostra atividades individuais pendentes e em execução, nomes dos responsáveis e fotografia quando existente, **sem valores**.
+- **Administrador → Produção & Valores:** rankings por atividades e profissionais, valores estimados de referência e detalhamento por atividade/executor sem contar um pacote duas vezes. Filtragem por data, serviço, profissional e cobertura comercial.
+- **Administrador → Conferência de fichas:** seleciona a data, imprime as fichas, confere o encerramento e pode corrigir executores, horários ou participação do serviço, mediante justificativa. Correções reabrem a ficha para nova conferência e são auditadas.
+- **Rateio:** por padrão 50/50 entre Banho e Tosa no pacote. Para atividade com múltiplos executores, divisão igualitária (100% da atividade no total), ajustável pelo Administrador. Centavos residuais são conciliados para não duplicar o valor total.
+- **Preço:** o valor comercial do serviço contratado continua no snapshot de `producao_valores` criado no encerramento. `etapa_valores` contém o valor associado à atividade; `etapa_rateios` associa a parcela aos executores. Estimativas parciais e preços sob consulta não são faturamento recebido.
+- **Legado:** atendimentos anteriores à migração permanecem no fluxo antigo, sem atribuição retroativa de executores. Apenas entradas novas (manuais ou aprovadas pelo calendário) têm atividades V2.3 automaticamente.
+- **Segurança:** tabelas operacionais sem valores acessíveis aos perfis Administrador/Operacional; `etapa_valores`, `etapa_rateios`, `fichas_conferencia` e `etapa_auditoria` apenas visíveis ao Administrador por RLS. Edição exclusivamente por RPCs com autorização verificada no banco.
+- **Retenção:** vínculo `ON DELETE CASCADE` com `atendimentos` para que a exclusão após 7 dias alcance atividades, valores e auditoria. Conservar fichas impressas/exportadas antes da retenção.
+- **Auditoria:** histórico de alterações com antes/depois e justificativa, impedindo UPDATE e escrita direta; ao corrigir pesos, são preservados snapshots de todas as etapas. O login Operacional compartilhado não comprova a identidade física de quem operou o clique; apenas os profissionais declarados.
+- **Limite conhecido:** por enquanto a decomposição automática considera nomes contendo “Banho” e “Tosa” e os adicionais selecionados. Serviços futuros que exigirem decomposições diferentes precisam de revisão da regra; esta versão não inclui um configurador geral de etapas de catálogo.
+
+### Homologação recomendada
+1. Cadastrar cão P com **Banho com Tosa na Máquina** e um adicional, indicando Rosana para Banho, Ariana para Tosa e Eduarda para o adicional.
+2. Prestador: verificar três atividades; iniciar separadamente, alternar o executor real no momento da conclusão e finalizar cada uma. Validar que o atendimento não encerra antes da última atividade.
+3. Telão: verificar nomes e status de cada atividade, sem qualquer valor.
+4. Administrador: verificar valores do pacote, rateio por atividade e por prestador, conferir a ficha e realizar uma correção justificada. Confirmar o evento de auditoria e a reabertura da conferência.
+5. Perfil Operacional: confirmar que as tabelas financeiras não ficam acessíveis.
+6. Testar entrada de agendamento aprovado no dia e preservação do fluxo anterior nos atendimentos antigos.
+
+### Migrações V2.3
+- `013_etapas_v23_operacao.sql`: atividades, participantes, fluxo e controles de acesso.
+- `014_etapas_v23_financeiro_auditoria.sql`: snapshot de rateio, correção, conferência e auditoria.
+- `015_etapas_v23_compatibilidade.sql`: compatibilidade dos estados com múltiplos executores.
+- `016_etapas_v23_rateios_concorrencia.sql`: bloqueio concorrente do último serviço e preservação de percentuais manuais.
+- `017_etapas_v23_tempo_consolidado.sql`: correção de tempos agregados.
+- `018_etapas_v23_validacao_tempos.sql`: validação de horários da ficha.
+- `019_etapas_v23_retencao.sql`: cascata da auditoria pela retenção.
+- `020_etapas_v23_realtime.sql`: alterações operacionais em tempo real.
+- `021_etapas_v23_auditoria_pacote.sql`: auditoria de todo o pacote.
+
 ## V2.2.0 — Produção e valores gerenciais (Administrador)
 
 **Objetivo:** medir produção estimada, produtividade por profissional, mix de serviços, adicionais e eficiência de atendimento. O painel é exclusivamente administrativo; **não representa faturamento realizado, cobrança ou lucro**.

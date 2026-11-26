@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="./especie-v20.css?v=200">
   <link rel="stylesheet" href="./comercial-v21.css?v=210">
   <link rel="stylesheet" href="./producao-v22.css?v=220">
+  <link rel="stylesheet" href="./etapas-v23.css?v=230">
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -41,7 +42,7 @@
       <p id="setupInfo" class="setup-info" hidden>O banco ainda não foi conectado. Configure o projeto Supabase em config.js para habilitar o acesso.</p>
       
     </form>
-    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 2.2.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 2.3.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
   </section>
   <div id="appShell" class="shell" hidden>
     <header class="topbar">
@@ -70,6 +71,7 @@
         <div class="subnav">
           <button type="button" class="subnav-item active" data-admin-tab="gerencial">Visão gerencial</button>
           <button type="button" class="subnav-item" data-admin-tab="producao">Produção &amp; Valores</button>
+          <button type="button" class="subnav-item" data-admin-tab="conferencia">Conferência de fichas</button>
           <button type="button" class="subnav-item" data-admin-tab="servicos">Serviços e preços</button>
           <button type="button" class="subnav-item" data-admin-tab="profissionais">Profissionais</button>
           <button type="button" class="subnav-item" data-admin-tab="agendamentos">Calendário <span id="bookingTabCount" class="booking-tab-count" hidden>0</span></button>
@@ -180,6 +182,9 @@
             <section class="panel"><div class="panel-heading"><h3>Adicionais mais solicitados</h3><p>Frequência nos atendimentos concluídos, sem preço unitário.</p></div><div id="prodAdditionalVolume" class="prod-bars"></div></section>
             <section class="panel"><div class="panel-heading"><h3>Tempo médio por profissional</h3><p>Minutos de execução dos atendimentos concluídos.</p></div><div id="prodProfessionalTime" class="prod-bars"></div></section>
           </div>
+          <section class="panel v23-prod-block"><div class="panel-heading"><h3>Produção por atividade e profissional</h3><p>Distribuição de valores por banho, tosa e adicionais, com rateio sem duplicação. Somente valores estimados, não recebimentos.</p></div>
+            <div id="v23Production" aria-live="polite"><div class="empty">Carregando detalhamento por atividade...</div></div>
+          </section>
           <section class="panel prod-daily-panel"><div class="panel-heading"><h3>Evolução diária</h3><p>Quantidades concluídas e valores estimados com preço fechado; números sempre visíveis.</p></div><div id="prodDaily" class="prod-daily"></div></section>
           <section class="panel prod-details-panel">
             <div class="panel-heading"><h3>Auditoria da produção por atendimento</h3><p>Valores armazenados no encerramento. “Retroativo” indica registro anterior à implantação do controle.</p></div>
@@ -187,6 +192,23 @@
               <th>Conclusão</th><th>Pet</th><th>Profissional</th><th>Serviço</th><th>Porte / Pelagem</th>
               <th>Adicionais</th><th>Execução</th><th>Cobertura</th><th>Valor de referência</th>
             </tr></thead><tbody id="prodRows"></tbody></table></div>
+          </section>
+        </div>
+        <div id="admin-conferencia" class="admin-panel" hidden>
+          <section class="panel v23-audit">
+            <div class="panel-heading">
+              <h2>Conferência e correção de fichas</h2>
+              <p>Confira a ficha física, valide os executores de cada atividade e registre correções justificadas. O histórico original é preservado.</p>
+            </div>
+            <div class="v23-toolbar no-print">
+              <label>Data das fichas <input id="v23AuditDate" type="date"></label>
+              <button id="v23AuditRefresh" type="button" class="btn btn-outline">Atualizar</button>
+              <button id="v23Print" type="button" class="btn btn-outline">Imprimir fichas</button>
+            </div>
+            <div id="v23AuditStats" class="v23-summary" aria-live="polite"></div>
+            <div id="v23AuditCards" class="v23-audit-cards"></div>
+            <h3>Trilha de auditoria</h3>
+            <div id="v23AuditHistory" class="v23-history"></div>
           </section>
         </div>
         <div id="admin-servicos" class="admin-panel" hidden>
@@ -300,6 +322,11 @@
             <div class="field"><label for="entryManejo">Manejo especial <b>*</b></label><select id="entryManejo" required><option value="">Selecione o manejo</option><option value="nao_se_aplica">Não se aplica</option><option value="ansioso">Pet Ansioso</option><option value="agressivo">Pet Agressivo</option><option value="idoso">Pet Idoso</option></select><small>Informação para a equipe, sem valores.</small></div>
             <fieldset class="commercial-extras"><legend>Serviços adicionais <span>(opcional, sem valores)</span></legend><div id="entryAdditionalList" class="extras-checks"></div></fieldset>
             <div class="field"><label for="entryService">Serviço a realizar <b>*</b></label><select id="entryService" required><option value="">Selecione um serviço</option></select></div>
+            <section class="v23-entry-plan" aria-label="Planejamento de executores">
+              <h3>Profissionais previstos por atividade</h3>
+              <p>Opcional. O executor real será confirmado por atividade ao finalizar. Um profissional pode assumir várias atividades.</p>
+              <div id="entryEtapasPrevistas"></div>
+            </section>
             <div class="field"><label for="isScheduled">Serviço agendado? <b>*</b></label><select id="isScheduled" required><option value="">Selecione</option><option value="sim">Sim</option><option value="nao">Não</option></select></div>
             <div id="scheduledTimeField" class="field" hidden><label for="scheduledTime">Horário agendado <b>*</b></label><input id="scheduledTime" type="time"></div>
             <div class="field"><label for="entryObs">Observações <span>(opcional)</span></label><textarea id="entryObs" rows="4" maxlength="1000" placeholder="Informações importantes para a equipe"></textarea><small class="counter"><span id="obsCounter">0</span>/1000</small></div>
@@ -310,7 +337,7 @@
         </div>
       </section>
       <section id="page-prestador" class="page" hidden>
-        <div class="page-heading"><div><span class="eyebrow">OPERAÇÃO</span><h1>Painel do prestador</h1><p>Assuma um atendimento e finalize quando o serviço terminar.</p></div><span class="live-indicator"><i></i> Atualização em tempo real</span></div>
+        <div class="page-heading"><div><span class="eyebrow">OPERAÇÃO</span><h1>Painel do prestador</h1><p>Assuma cada atividade do animal, confirme os executores reais e finalize individualmente.</p></div><span class="live-indicator"><i></i> Atualização em tempo real</span></div>
         <div class="queue-grid">
           <section class="panel queue-panel queue-warning"><div class="queue-title"><h2>Fila de espera <span id="waitingCount">0</span></h2><p>Por ordem de cadastro</p></div><div id="waitingList" class="queue-list"></div></section>
           <section class="panel queue-panel queue-success"><div class="queue-title"><h2>Em execução <span id="activeCount">0</span></h2><p>Atendimentos em andamento</p></div><div id="activeList" class="queue-list"></div></section>
@@ -320,17 +347,18 @@
         <div class="page-heading no-print"><div><span class="eyebrow">PAINEL OPERACIONAL</span><h1>Visão do telão</h1><p>Exibição contínua das filas de atendimento.</p></div><button id="fullscreenBtn" type="button" class="btn btn-outline">Tela cheia</button></div>
         <div class="tv-header"><div class="brand"><img class="brand-logo" src="./assets/logo.webp" alt="Logo Bolhas & Latidos" onerror="this.hidden=true"><span class="brand-fallback">Bolhas <em>&</em> Latidos</span></div><div class="tv-now" id="tvClock"></div></div>
         <div class="tv-grid" id="tvGrid" data-density="single"><div class="tv-column farol-warning"><h2>Aguardando <span id="tvWaitingCount">0</span></h2><div id="tvWaiting" class="tv-list"></div></div><div class="tv-column farol-success"><h2>Em execução <span id="tvActiveCount">0</span></h2><div id="tvActive" class="tv-list"></div></div></div>
-        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 2.2.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 2.3.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
       </section>
     </main>
-    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 2.2.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
+    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 2.3.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
   </div>
   <section id="bookingPrintSheet" hidden aria-label="Ficha de programação para impressão"></section>
   <script src="./config.js?v=20261125-2"></script>
-  <script type="module" src="./app.js?v=220"></script>
-  <script type="module" src="./producao-admin.js?v=220"></script>
-  <script type="module" src="./comercial-admin.js?v=220"></script>
-  <script type="module" src="./agendamento-admin.js?v=220"></script>
-  <script type="module" src="./programacao-entrada.js?v=220"></script>
+  <script type="module" src="./app.js?v=230"></script>
+  <script type="module" src="./etapas-v23.js?v=230"></script>
+  <script type="module" src="./producao-admin.js?v=230"></script>
+  <script type="module" src="./comercial-admin.js?v=230"></script>
+  <script type="module" src="./agendamento-admin.js?v=230"></script>
+  <script type="module" src="./programacao-entrada.js?v=230"></script>
 </body>
 </html>

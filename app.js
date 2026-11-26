@@ -55,9 +55,17 @@ function renderEntryBreeds(){
 const statusBadge = (tone,label) => '<span class="tag farol-tag status-'+tone+'"><span class="farol-dot" aria-hidden="true"></span>'+esc(label)+'</span>';
 const setFarol = (id,tone) => { const node=byId(id)?.closest('.stat-card, .insight-mini'); if(node)node.dataset.farol=tone; };
 
-const state = { services:[], professionals:[], attendances:[], breeds:[], additionalCatalog:[], images:new Map(), channel:null, busy:false, photo:null, stream:null, page:'admin', role:null };
+const state = { services:[], professionals:[], attendances:[], etapas:[], etapaProfissionais:[], breeds:[], additionalCatalog:[], images:new Map(), channel:null, busy:false, photo:null, stream:null, page:'admin', role:null };
 const serviceName = id => state.services.find(s => s.id === id)?.nome || 'Serviço indisponível';
 const professionalName = id => state.professionals.find(p => p.id === id)?.nome || '—';
+const attendanceExecutors=r=>{
+ const steps=state.etapas.filter(e=>e.atendimento_id===r.id);
+ if(!steps.length)return professionalName(r.profissional_id);
+ const ids=[...new Set(steps.flatMap(e=>state.etapaProfissionais
+   .filter(p=>p.etapa_id===e.id&&(p.papel==='confirmado'||p.papel==='em_execucao'))
+   .map(p=>p.profissional_id)))];
+ return ids.length?ids.map(professionalName).join(', '):'A definir';
+};
 
 let toastTimeout = null;
 function notify(message,type='normal') {
@@ -145,7 +153,9 @@ async function refresh() {
     supabase.from('profissionais').select('*').order('nome'),
     supabase.from('atendimentos').select('*').order('criado_em',{ascending:true}).limit(2000),
     supabase.from('catalogo_racas').select('especie,nome').order('nome'),
-    supabase.from('catalogo_adicionais').select('id,nome,ativo').order('nome')
+    supabase.from('catalogo_adicionais').select('id,nome,ativo').order('nome'),
+    supabase.from('atendimento_etapas').select('*').order('ordem').limit(3500),
+    supabase.from('etapa_profissionais').select('*').limit(8500)
   ]);
   const problem = results.find(r => r.error);
   if(problem) { setConnection('error'); notify('Falha na sincronização: '+problem.error.message,'error'); return; }
@@ -154,6 +164,8 @@ async function refresh() {
   state.attendances = results[2].data || [];
   state.breeds = results[3].data || [];
   state.additionalCatalog=results[4].data||[];
+  state.etapas=results[5].data||[];
+  state.etapaProfissionais=results[6].data||[];
   await loadImageUrls();
   setConnection('ok');
   byId('lastUpdated').textContent = 'Atualizado em '+dateFmt.format(new Date())+' às '+hourOf(new Date());
@@ -173,6 +185,8 @@ function subscribe() {
   if(state.channel) supabase.removeChannel(state.channel);
   state.channel = supabase.channel('operacao-bolhas')
     .on('postgres_changes',{event:'*',schema:'public',table:'atendimentos'},()=>refresh())
+    .on('postgres_changes',{event:'*',schema:'public',table:'atendimento_etapas'},()=>refresh())
+    .on('postgres_changes',{event:'*',schema:'public',table:'etapa_profissionais'},()=>refresh())
     .on('postgres_changes',{event:'*',schema:'public',table:'servicos'},()=>refresh())
     .on('postgres_changes',{event:'*',schema:'public',table:'profissionais'},()=>refresh())
     .subscribe(status=>{if(status==='CHANNEL_ERROR')setConnection('error');});
@@ -225,9 +239,19 @@ function renderReport() {
   renderInsights(date,done);
   const byStaff=new Map(),byService=new Map();
   for (const r of done) {
-    const n=professionalName(r.profissional_id),s=serviceName(r.servico_id);
-    byStaff.set(n,(byStaff.get(n)||0)+1);
+    const s=serviceName(r.servico_id);
     byService.set(s,(byService.get(s)||0)+1);
+    const stages=state.etapas.filter(e=>e.atendimento_id===r.id&&e.status==='concluido');
+    if(stages.length){
+      for(const stage of stages)for(const p of state.etapaProfissionais.filter(p=>
+        p.etapa_id===stage.id&&p.papel==='confirmado')){
+        const n=professionalName(p.profissional_id);
+        byStaff.set(n,(byStaff.get(n)||0)+1);
+      }
+    }else{
+      const n=professionalName(r.profissional_id);
+      byStaff.set(n,(byStaff.get(n)||0)+1);
+    }
   }
   renderChart('professionalsChart',[...byStaff].map(([name,count])=>({name,count})));
   renderChart('servicesChart',[...byService].map(([name,count])=>({name,count})));
@@ -240,7 +264,7 @@ function renderReport() {
   renderChart('breedsChart',[...byBreed].map(([name,count])=>({name,count})));
   renderChart('speciesChart',[...bySpecies].map(([name,count])=>({name,count})));
   byId('reportTable').innerHTML = dailyRecords.map(r=>
-    '<tr><td>'+esc(r.animal_nome)+'</td><td>'+esc(especieLabel(r))+'</td><td>'+esc(racaLabel(r))+'</td><td>'+esc(transporteLabel(r))+'</td><td>'+esc(serviceName(r.servico_id))+'</td><td>'+esc(additionalNames(r.adicionais))+'</td><td>'+esc(manejoLabel(r))+'</td><td>'+esc(professionalName(r.profissional_id))+'</td><td>'+hourOf(r.criado_em)+'</td><td>'+hourOf(r.iniciado_em)+'</td><td>'+hourOf(r.concluido_em)+'</td><td>'+duration(minutesBetween(r.criado_em,r.iniciado_em))+'</td><td>'+duration(minutesBetween(r.iniciado_em,r.concluido_em))+'</td><td>'+statusBadge(r.status==='concluido'?'neutral':r.status==='em_execucao'?'success':'warning',r.status==='concluido'?'Concluído':r.status==='em_execucao'?'Em execução':'Aguardando')+'</td></tr>'
+    '<tr><td>'+esc(r.animal_nome)+'</td><td>'+esc(especieLabel(r))+'</td><td>'+esc(racaLabel(r))+'</td><td>'+esc(transporteLabel(r))+'</td><td>'+esc(serviceName(r.servico_id))+'</td><td>'+esc(additionalNames(r.adicionais))+'</td><td>'+esc(manejoLabel(r))+'</td><td>'+esc(attendanceExecutors(r))+'</td><td>'+hourOf(r.criado_em)+'</td><td>'+hourOf(r.iniciado_em)+'</td><td>'+hourOf(r.concluido_em)+'</td><td>'+duration(minutesBetween(r.criado_em,r.iniciado_em))+'</td><td>'+duration(minutesBetween(r.iniciado_em,r.concluido_em))+'</td><td>'+statusBadge(r.status==='concluido'?'neutral':r.status==='em_execucao'?'success':'warning',r.status==='concluido'?'Concluído':r.status==='em_execucao'?'Em execução':'Aguardando')+'</td></tr>'
   ).join('') || '<tr><td colspan="14">Nenhum atendimento registrado na data selecionada.</td></tr>';
 }
 
@@ -250,6 +274,10 @@ function renderInsights(date, done) {
   const started=state.attendances.filter(r=>r.iniciado_em && dayOf(r.iniciado_em)===date);
   const waitTimes=started.map(r=>minutesBetween(r.criado_em,r.iniciado_em)).filter(n=>n!==null);
   const professionals=new Set(started.map(r=>r.profissional_id).filter(Boolean));
+  for(const e of state.etapas.filter(e=>e.iniciado_em&&dayOf(e.iniciado_em)===date))
+    for(const p of state.etapaProfissionais.filter(p=>
+      p.etapa_id===e.id&&(p.papel==='confirmado'||p.papel==='em_execucao')))
+      professionals.add(p.profissional_id);
   const approvedArrivals=arrivals.filter(r=>Boolean(r.agendamento_id));
   byId('insightEntries').textContent=String(arrivals.length);
   byId('insightWait').textContent=waitTimes.length
@@ -349,11 +377,12 @@ function closeProfessionalPickers(exceptId=null){
 }
 
 function renderQueues() {
-  const waiting=state.attendances.filter(r=>r.status==='aguardando').sort((a,b)=>new Date(a.criado_em)-new Date(b.criado_em));
-  const active=state.attendances.filter(r=>r.status==='em_execucao').sort((a,b)=>new Date(a.iniciado_em)-new Date(b.iniciado_em));
+  const v23Ids=new Set(state.etapas.map(e=>e.atendimento_id));
+  const waiting=state.attendances.filter(r=>r.status==='aguardando'&&!v23Ids.has(r.id)).sort((a,b)=>new Date(a.criado_em)-new Date(b.criado_em));
+  const active=state.attendances.filter(r=>r.status==='em_execucao'&&!v23Ids.has(r.id)).sort((a,b)=>new Date(a.iniciado_em)-new Date(b.iniciado_em));
   byId('waitingCount').textContent=waiting.length;byId('activeCount').textContent=active.length;
   const professionals=state.professionals.filter(p=>p.ativo);
-  byId('waitingList').innerHTML=waiting.map(r=>
+  byId('waitingList').innerHTML='<div id="v23WaitingTasks" class="v23-queue-list"></div>'+waiting.map(r=>
     '<article class="pet-card farol-card farol-warning">'+photoMarkup(r)+'<div class="pet-info"><div class="pet-head"><strong>'+esc(r.animal_nome)+'</strong>'+scheduleLabel(r)+'</div><div class="pet-meta">'+esc(serviceName(r.servico_id))+' · Entrada '+hourOf(r.criado_em)+'</div>'+
     '<div class="pet-detail"><b>Espécie:</b> '+esc(especieLabel(r))+' · <b>Raça:</b> '+esc(racaLabel(r))+'</div>'+
     '<div class="pet-detail"><b>Adicionais:</b> '+esc(additionalNames(r.adicionais))+'</div>'+
@@ -364,13 +393,14 @@ function renderQueues() {
     '<div class="pet-actions">'+professionalPicker(r,professionals)+
     '<button type="button" class="btn btn-primary" data-assume="'+esc(r.id)+'">Iniciar</button></div></div></article>'
   ).join('') || '<div class="empty">Nenhum animal aguardando atendimento.</div>';
-  byId('activeList').innerHTML=active.map(r=>
+  byId('activeList').innerHTML='<div id="v23ActiveTasks" class="v23-queue-list"></div>'+active.map(r=>
     '<article class="pet-card farol-card farol-success">'+photoMarkup(r)+'<div class="pet-info"><div class="pet-head"><strong>'+esc(r.animal_nome)+'</strong>'+statusBadge('success','Em execução')+'</div><div class="pet-meta">'+esc(serviceName(r.servico_id))+'</div><div class="pet-detail"><b>Espécie:</b> '+esc(especieLabel(r))+' · <b>Raça:</b> '+esc(racaLabel(r))+'</div><div class="pet-detail"><b>Adicionais:</b> '+esc(additionalNames(r.adicionais))+'</div><div class="pet-detail"><b>Manejo:</b> '+esc(manejoLabel(r))+'</div><div class="pet-detail">Profissional: <strong>'+esc(professionalName(r.profissional_id))+'</strong></div><div class="pet-detail">Início: '+hourOf(r.iniciado_em)+'</div><div class="pet-actions"><button type="button" class="btn btn-primary" data-finish="'+esc(r.id)+'">Finalizar atendimento</button></div></div></article>'
   ).join('') || '<div class="empty">Nenhum atendimento em execução.</div>';
 }
 function renderTV() {
-  const waiting=state.attendances.filter(r=>r.status==='aguardando').sort((a,b)=>new Date(a.criado_em)-new Date(b.criado_em));
-  const active=state.attendances.filter(r=>r.status==='em_execucao').sort((a,b)=>new Date(a.iniciado_em)-new Date(b.iniciado_em));
+  const v23Ids=new Set(state.etapas.map(e=>e.atendimento_id));
+  const waiting=state.attendances.filter(r=>r.status==='aguardando'&&!v23Ids.has(r.id)).sort((a,b)=>new Date(a.criado_em)-new Date(b.criado_em));
+  const active=state.attendances.filter(r=>r.status==='em_execucao'&&!v23Ids.has(r.id)).sort((a,b)=>new Date(a.iniciado_em)-new Date(b.iniciado_em));
   byId('tvWaitingCount').textContent=waiting.length;byId('tvActiveCount').textContent=active.length;
   const count=Math.max(waiting.length,active.length);
   byId('tvGrid').dataset.density=count<=1?'single':count<=4?'few':'many';
@@ -388,8 +418,8 @@ function renderTV() {
         +'<span class="tv-status">'+statusBadge('warning','Aguardando')+'</span>'
         +(r.agendado?'<span class="tv-booked-label">Agendado'+(r.horario_agendado?' · '+esc(r.horario_agendado.slice(0,5)):'')+'</span>':'')
     )+'</div></article>';
-  byId('tvWaiting').innerHTML=waiting.map(r=>item(r,false)).join('') || '<div class="empty">Nenhum animal aguardando.</div>';
-  byId('tvActive').innerHTML=active.map(r=>item(r,true)).join('') || '<div class="empty">Nenhum atendimento em execução.</div>';
+  byId('tvWaiting').innerHTML='<div id="v23TvWaiting" class="v23-tv-list"></div>'+(waiting.map(r=>item(r,false)).join('') || '');
+  byId('tvActive').innerHTML='<div id="v23TvActive" class="v23-tv-list"></div>'+(active.map(r=>item(r,true)).join('') || '');
 }
 async function runUpdate(table,id,ativo) {
   const {error}=await supabase.from(table).update({ativo:!ativo}).eq('id',id);
@@ -550,7 +580,7 @@ function bindEvents() {
       !['pequeno','medio','grande'].includes(porte)||!['curto','medio','longo'].includes(pelagem)){
       notify('Preencha os campos obrigatórios, incluindo espécie, raça, porte, pelagem e manejo.','error');return;
     }
-    let foto_path=null;
+    let foto_path=null,registroCriado=false;
     setLoading(true);
     try {
       if(state.photo) {
@@ -558,18 +588,39 @@ function bindEvents() {
         const {error}=await supabase.storage.from('fotos-atendimentos').upload(foto_path,state.photo,{contentType:'image/jpeg',upsert:false});
         if(error)throw error;
       }
-      const {error}=await supabase.from('atendimentos').insert({
+      const {data:novo,error}=await supabase.from('atendimentos').insert({
         animal_nome,tutor:tutor||null,especie,raca,servico_id,agendado,horario_agendado,
         manejo,porte,pelagem,adicionais,
         observacao:byId('entryObs').value.trim()||null,foto_path
-      });
+      }).select('id').single();
       if(error)throw error;
-      byId('entryForm').reset();renderEntryBreeds();renderEntryAdditionalList();state.photo=null;updatePhotoPreview();updateSchedule();
+      registroCriado=true;
+      // Planejamento é opcional e sua falha não apaga o animal já cadastrado.
+      try{
+      const planned=[...document.querySelectorAll('#entryEtapasPrevistas [data-v23-planned]')];
+      if(planned.length){
+        const {data:created,error:stagesError}=await supabase.from('atendimento_etapas')
+          .select('id,tipo,ordem,adicional_id').eq('atendimento_id',novo.id);
+        if(stagesError)throw stagesError;
+        for(const stage of created||[]){
+          const key=stage.tipo==='principal'?'principal:'+stage.ordem:'adicional:'+stage.adicional_id;
+          const checkboxes=planned.filter(el=>el.dataset.v23Planned===key&&el.checked);
+          if(!checkboxes.length)continue;
+          const {error:planError}=await supabase.rpc('planejar_etapa_v23',{
+            p_etapa_id:stage.id,p_profissionais:checkboxes.map(x=>x.value)});
+          if(planError)throw planError;
+        }
+      }
+      }catch(planErr){
+        notify('Animal registrado, mas alguns responsáveis previstos não foram salvos: '+planErr.message,'error');
+      }
+      byId('entryForm').reset();renderEntryBreeds();renderEntryAdditionalList();
+      window.dispatchEvent(new Event('bolhas:entrada-reset'));state.photo=null;updatePhotoPreview();updateSchedule();
       byId('obsCounter').textContent='0';notify('Entrada registrada e enviada à fila.','success');
       await refresh();
     }catch(err){
-      if(foto_path)await supabase.storage.from('fotos-atendimentos').remove([foto_path]);
-      notify('Não foi possível registrar: '+err.message,'error');
+      if(foto_path&&!registroCriado)await supabase.storage.from('fotos-atendimentos').remove([foto_path]);
+      notify((registroCriado?'Animal registrado; falha posterior: ':'Não foi possível registrar: ')+err.message,'error');
     }finally{setLoading(false);}
   });
   byId('waitingList').addEventListener('click',async e=>{

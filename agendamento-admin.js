@@ -1,4 +1,4 @@
-import {supabase,state,notify,esc,today} from './app.js?v=220';
+import {supabase,state,notify,esc,today} from './app.js?v=230';
 
 let solicitacoes=[], programados=new Map(), selectedDate=null, loading=false, channel=null;
 const byId=id=>document.getElementById(id);
