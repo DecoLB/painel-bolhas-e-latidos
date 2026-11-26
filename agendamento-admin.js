@@ -1,4 +1,4 @@
-import {supabase,state,notify,esc,today} from './app.js?v=250';
+import {supabase,state,notify,esc,today} from './app.js?v=260';
 
 let solicitacoes=[], programados=new Map(), selectedDate=null, loading=false, channel=null;
 const byId=id=>document.getElementById(id);
@@ -146,7 +146,12 @@ function printSchedule(){
   for(const r of list){const status=programados.get(r.id).status;if(status in counters)counters[status]++;}
   const rows=list.map((r,i)=>{
     const prog=programados.get(r.id),st=prog.status;
-    const status=esc(statusLabels[st]||'Programado')+(st==='recusado'
+    const related=state.attendances.find(a=>a.agendamento_id===r.id||a.id===prog.atendimento_id);
+    const packageText=related?.pacote_pre_pago===true?'Sim':related?.pacote_pre_pago===false?'Não':'Não informado';
+    const status=esc(statusLabels[st]||'Programado')+
+      (st==='entrada_realizada'?'<div><b>Pacote pré-pago:</b> '+esc(packageText)+'</div>':'')+
+      (st==='programado'?'<div>Pacote pré-pago: a definir na entrada</div>':'')+
+      (st==='recusado'
       ?'<div class="booking-print-reason">'+esc(reasonLabels[prog.motivo_recusa]||'')+
         (prog.justificativa_outro?' · '+esc(prog.justificativa_outro):'')+'</div>':'');
     return '<tr><td>'+(i+1)+'</td><td><b>'+esc(r.pet_nome)+'</b><div>'+esc(r.tutor_nome)+'</div>'
@@ -167,7 +172,7 @@ function printSchedule(){
     +'<table class="booking-print-table"><thead><tr><th>#</th><th>Pet / Tutor</th>'
     +'<th>Porte</th><th>Serviço</th><th>Transporte</th><th>Endereço</th><th>Situação</th></tr></thead>'
     +'<tbody>'+(rows||'<tr><td colspan="7">Nenhum agendamento aprovado nesta data.</td></tr>')+'</tbody></table>'
-    +'<footer class="booking-print-footer">Versão 2.5.0 · Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA · Relatório de programação · Impresso em '
+    +'<footer class="booking-print-footer">Versão 2.6.0 · Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA · Relatório de programação · Impresso em '
     +esc(new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Sao_Paulo'}).format(new Date()))
     +'</footer>';
   sheet.hidden=false;

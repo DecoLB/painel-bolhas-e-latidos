@@ -1,3 +1,21 @@
+## V2.6.0 — Registro de utilização de pacote pré-pago (26/11/2026)
+
+**Definição:** `pacote_pre_pago` indica exclusivamente se o serviço do atendimento consumiu um **plano pago antecipadamente pelo tutor**. É diferente de um serviço composto (Banho + Tosa). Não representa comissão, repasse, desconto, recebimento, saldo de créditos nem altera os preços de referência.
+
+**Fluxos atualizados:**
+- **Entrada manual:** escolha obrigatória `Este atendimento utiliza pacote pré-pago?` Sim/Não, gravada no próprio registro de `atendimentos` (boolean).
+- **Entrada de agendamento previamente aprovado:** antes do check-in, colaborador escolhe Sim/Não. A RPC `registrar_entrada_programada_v4` executa o check-in e grava o indicador **na mesma transação**; mantém as validações existentes de data, status, manejo, perfil e concorrência. O tutor **não escolhe** essa marcação no link público, pois é uma conferência interna na chegada.
+- **Prestador e telão:** sinalização apenas informativa `Pacote pré-pago: Sim/Não`, sem valores comerciais.
+- **Administrador — Visão gerencial:** indicação no relatório diário e contador de entradas do dia marcadas como pacote.
+- **Administrador — Conferência de fichas:** status de utilização no cabeçalho, contador de utilização na data e correção mediante justificativa (8 a 500 caracteres), apenas por Administrador. A função `corrigir_pacote_pre_pago` registra a alteração em `etapa_auditoria` e reabre a ficha já conferida. Os valores financeiros e os executores não são modificados.
+- **Administrador — Produção e Valores:** coluna e filtro Sim/Não/Não informado, resumo de usos de pacote, detalhe por executor e CSV com a informação.
+- **Impressões:** relatório diário em A4 horizontal com coluna de pacote, ficha de conferência com anotação do pacote por animal e programação com informação após o check-in.
+- **Histórico:** valores NULL de registros anteriores são exibidos como **`Não informado`**; não classificar automaticamente registros antigos como Não. A retenção vigente de sete dias continua aplicável. Este desenvolvimento **não cria cadastro de planos, número de sessões, saldo ou histórico permanente de créditos**; esse controle exigiria requisitos próprios.
+
+**Migração:** `supabase/migrations/027_pacote_prepago_atendimento_v26.sql`. O check-in da V3 permanece disponível por compatibilidade, mas as telas desta versão chamam a V4. Regras de precificação e snapshots não foram modificadas.
+
+**Cenários para homologação:** registrar pet com Sim e outro com Não; verificar filas, telão, relatório e CSV; entrar com agendamento aprovado selecionando Sim; conferir ficha, corrigir Sim→Não com justificativa e validar histórico de auditoria; confirmar que valores do produto continuam integrais e históricos sem marcação exibem `Não informado`.
+
 ## V2.5.0 — Padronização de todas as impressões (26/11/2026)
 
 **Impressões suportadas por três ações existentes:**

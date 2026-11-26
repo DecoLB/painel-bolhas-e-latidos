@@ -1,4 +1,4 @@
-import {supabase,state,notify,esc,today,refresh} from './app.js?v=250';
+import {supabase,state,notify,esc,today,refresh} from './app.js?v=260';
 
 // V2.3: atividades e executores, sem preços nas telas operacionais.
 const $=id=>document.getElementById(id);
@@ -13,6 +13,7 @@ const staffName=id=>state.professionals.find(p=>p.id===id)?.nome||'Profissional 
 const petName=id=>state.attendances.find(a=>a.id===id)?.animal_nome||'Animal não encontrado';
 const serviceName=id=>state.services.find(s=>s.id===id)?.nome||'Serviço não informado';
 const findPet=id=>state.attendances.find(a=>a.id===id);
+const packageText=a=>a?.pacote_pre_pago===true?'Sim':a?.pacote_pre_pago===false?'Não':'Não informado';
 const participants=(stageId,papel)=>state.etapaProfissionais.filter(p=>p.etapa_id===stageId&&p.papel===papel).map(p=>p.profissional_id);
 const names=arr=>arr?.length?arr.map(staffName).join(', '):'A definir';
 const profiles=()=>state.professionals.filter(p=>p.ativo);
@@ -78,6 +79,7 @@ function activityCard(stage){
    +'<div class="v23-task-service"><b>Atividade:</b> '+esc(stage.nome)
    +' <small>('+esc(stage.tipo==='principal'?'Serviço principal':'Adicional')+')</small></div>'
    +'<div><b>Contratado:</b> '+esc(serviceName(a.servico_id))+'</div>'
+   +'<div class="v26-package-line"><b>Pacote pré-pago:</b> '+esc(packageText(a))+'</div>'
    +'<div><b>Previsto:</b> '+esc(names(planned))+'</div>'
    +(!waiting?'<div><b>Em execução:</b> '+esc(names(running))+' · Início '+esc(hour(stage.iniciado_em))+'</div>':'')
    +'<div class="v23-choose-executors"><strong>'+(waiting?'Quem iniciará esta atividade?':'Confirme quem realmente executou:')+'</strong>'
@@ -93,6 +95,7 @@ function tvGroup(stage,active){
    +'<div class="v23-tv-photo">'+mainPhoto(a)+'</div>'
    +'<div class="v23-tv-description"><strong>'+esc(a.animal_nome)+'</strong>'
    +'<div><b>Atividade:</b> '+esc(stage.nome)+'</div>'
+   +'<div><b>Pacote pré-pago:</b> '+esc(packageText(a))+'</div>'
    +'<div><b>'+(active?'Executando':'Previsto')+':</b> '+esc(names(ids))+'</div>'
    +'<small>'+esc(active?'Em execução desde '+hour(stage.iniciado_em):'Aguardando desde '+hour(a.criado_em))+'</small>'
    +'</div></article>';
@@ -218,6 +221,14 @@ function auditCard(a){
    +'<p>'+esc(serviceName(a.servico_id))+' · '+esc(hour(a.criado_em))+' · '+stages.length+' atividades</p></div>'
    +'<span class="v23-status '+(check?'v23-status-reviewed':done?'v23-status-pending':'')+'">'
    +esc(check?'Ficha conferida':done?'Pendente de conferência':'Em andamento')+'</span></header>'
+   +'<div class="v26-package-audit"><strong>Pacote pré-pago (utilização): '+esc(packageText(a))+'</strong>'
+   +'<details class="v26-package-edit"><summary>Corrigir informação do pacote</summary>'
+   +'<label>Utilizou pacote pré-pago?<select data-v26-pacote-value>'
+   +'<option value="">Selecione</option><option value="sim"'+(a.pacote_pre_pago===true?' selected':'')+'>Sim</option>'
+   +'<option value="nao"'+(a.pacote_pre_pago===false?' selected':'')+'>Não</option></select></label>'
+   +'<label>Justificativa (8 a 500 caracteres)<textarea maxlength="500" rows="2" data-v26-pacote-reason></textarea></label>'
+   +'<button type="button" class="btn btn-outline" data-v26-correct-package="'+esc(a.id)+'">Salvar correção auditada</button>'
+   +'</details></div>'
    +'<div class="v23-total"><b>Valor único do atendimento:</b> '+esc(total!=null?money(total)+(partial?' · parcial':''):'Sob consulta')+'</div>'
    +'<p class="v23-muted">O preço integral de um produto composto pode aparecer em mais de uma atividade. O atendimento é contabilizado apenas uma vez.</p>'
    +stages.map(auditStage).join('')
@@ -234,7 +245,8 @@ function renderAudit(){
   confirmed=selected.filter(a=>!!reviewed(a.id)).length;
  $('v23AuditStats').innerHTML='<div><b>'+selected.length+'</b><span>Fichas na data</span></div>'
   +'<div><b>'+pending+'</b><span>Aguardando conferência</span></div>'
-  +'<div><b>'+confirmed+'</b><span>Conferidas</span></div>';
+  +'<div><b>'+confirmed+'</b><span>Conferidas</span></div>'
+  +'<div><b>'+selected.filter(a=>a.pacote_pre_pago===true).length+'</b><span>Usos de pacote pré-pago</span></div>';
  $('v23AuditCards').innerHTML=selected.length?selected.map(auditCard).join(''):
   '<div class="empty">Nenhuma ficha com etapas registrada na data selecionada.</div>';
  const ids=new Set(selected.map(a=>a.id));
@@ -261,10 +273,13 @@ function renderProduction(){
  const start=mode==='1'?today():mode==='custom'?$('prodStartDate').value:(()=>{
   const d=new Date(today()+'T12:00:00Z');d.setUTCDate(d.getUTCDate()-6);return d.toISOString().slice(0,10);
  })();
- const profFilter=$('prodProfessional').value,serviceFilter=$('prodService').value,coverageFilter=$('prodCoverage').value;
+ const profFilter=$('prodProfessional').value,serviceFilter=$('prodService').value,
+  coverageFilter=$('prodCoverage').value,packageFilter=$('prodPackage').value;
  const chosen=state.attendances.filter(a=>a.status==='concluido'&&a.concluido_em
   &&day(a.concluido_em)>=start&&day(a.concluido_em)<=end
-  &&(!serviceFilter||a.servico_id===serviceFilter));
+  &&(!serviceFilter||a.servico_id===serviceFilter)
+  &&(!packageFilter||(packageFilter==='sim'?a.pacote_pre_pago===true:
+      packageFilter==='nao'?a.pacote_pre_pago===false:a.pacote_pre_pago==null)));
  const ids=new Set(chosen.map(a=>a.id));
  const stages=state.etapas.filter(s=>ids.has(s.atendimento_id)&&s.status==='concluido'
    &&(!coverageFilter||financeByPet(s.atendimento_id)?.cobertura===coverageFilter));
@@ -277,7 +292,7 @@ function renderProduction(){
   for(const id of participants(stage.id,'confirmado')){
    if(profFilter&&id!==profFilter)continue;
    rows.push({pet:petName(stage.atendimento_id),atividade:stage.nome,produto,
-      profissional:staffName(id),valor,cobertura});
+      profissional:staffName(id),pacote:packageText(pet),valor,cobertura});
    const chave=id+'|'+key; // Mesmo executor em Banho e Tosa: um só produto comercial associado.
    if(!byProduct.has(chave))byProduct.set(chave,{id,profissional:staffName(id),valor,cobertura});
   }
@@ -296,12 +311,12 @@ function renderProduction(){
   +x.conhecidos+' com preço fechado · <b>'+money(x.total)+'</b> em produtos associados</span></div>').join(''):
   '<p class="v23-muted">Sem serviços executados para os filtros escolhidos.</p>')+'</div>'
   +'<div class="table-scroll"><table class="prod-table v23-prod-table"><thead><tr>'
-  +'<th>Pet</th><th>Produto comercial</th><th>Atividade executada</th><th>Profissional</th><th>Valor integral do produto</th><th>Cobertura</th>'
+  +'<th>Pet</th><th>Pacote pré-pago</th><th>Produto comercial</th><th>Atividade executada</th><th>Profissional</th><th>Valor integral do produto</th><th>Cobertura</th>'
   +'</tr></thead><tbody>'+(rows.length?rows.map(x=>
-   '<tr><td>'+esc(x.pet)+'</td><td>'+esc(x.produto)+'</td><td>'+esc(x.atividade)+'</td>'
+   '<tr><td>'+esc(x.pet)+'</td><td>'+esc(x.pacote)+'</td><td>'+esc(x.produto)+'</td><td>'+esc(x.atividade)+'</td>'
    +'<td>'+esc(x.profissional)+'</td><td>'+esc(x.valor!=null?money(x.valor):'Sob consulta')+'</td>'
    +'<td>'+esc(x.cobertura)+'</td></tr>').join(''):
-   '<tr><td colspan="6">Sem atividades concluídas.</td></tr>')+'</tbody></table></div>';
+   '<tr><td colspan="7">Sem atividades concluídas.</td></tr>')+'</tbody></table></div>';
 }
 async function withAdminRpc(fn,args,message){
  if(!isAdmin()||working)return;
@@ -322,6 +337,20 @@ $('v23AuditCards').addEventListener('click',async e=>{
   await withAdminRpc('conferir_ficha_v23',{p_atendimento_id:review.dataset.v23ConfirmCard},'Ficha conferida pelo Administrador.');
   return;
  }
+ const packageButton=e.target.closest('[data-v26-correct-package]');
+ if(packageButton){
+  const box=packageButton.closest('.v26-package-audit');
+  const value=box.querySelector('[data-v26-pacote-value]')?.value;
+  const reason=box.querySelector('[data-v26-pacote-reason]')?.value.trim()||'';
+  if(!['sim','nao'].includes(value)||reason.length<8){
+   notify('Selecione Sim ou Não e informe justificativa com pelo menos 8 caracteres.','error');return;
+  }
+  await withAdminRpc('corrigir_pacote_pre_pago',{
+   p_atendimento_id:packageButton.dataset.v26CorrectPackage,
+   p_pacote_pre_pago:value==='sim',p_justificativa:reason
+  },'Pacote pré-pago atualizado; correção registrada na auditoria.');
+  return;
+ }
  const corr=e.target.closest('[data-v23-correct]');
  if(!corr)return;
  const stageId=corr.dataset.v23Correct,box=e.target.closest('[data-v23-stage]');
@@ -340,7 +369,7 @@ $('v23AuditCards').addEventListener('click',async e=>{
 });
 $('v23AuditDate').value=today();$('v23AuditDate').max=today();
 $('v23AuditDate').addEventListener('change',renderAudit);
-for(const id of ['prodPeriod','prodStartDate','prodEndDate','prodProfessional','prodService','prodCoverage'])
+for(const id of ['prodPeriod','prodStartDate','prodEndDate','prodProfessional','prodService','prodCoverage','prodPackage'])
  $(id).addEventListener('change',renderProduction);
 $('v23AuditRefresh').addEventListener('click',loadAdmin);
 $('v23Print').addEventListener('click',()=>document.dispatchEvent(new Event('bolhas:print-fichas')));

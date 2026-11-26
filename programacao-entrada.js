@@ -1,4 +1,4 @@
-import {supabase,state,notify,esc,today,refresh} from './app.js?v=250';
+import {supabase,state,notify,esc,today,refresh} from './app.js?v=260';
 
 const byId=id=>document.getElementById(id);
 const plusDays=(iso,n)=>{const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
@@ -10,6 +10,8 @@ const breedLabel=r=>r.raca||'Não informada';
 const transportLabel=r=>r.transporte_bolhas===true?'Sim · Bolhas & Latidos':r.transporte_bolhas===false?'Não · Tutor':'Não informado';
 const serviceName=id=>state.services.find(s=>s.id===id)?.nome||'Serviço cadastrado';
 const additionalNames=ids=>(ids||[]).map(id=>state.additionalCatalog.find(x=>x.id===id)?.nome||'Adicional indisponível').join(', ')||'Nenhum';
+const packageOptions='<option value="">Selecione</option><option value="sim">Sim</option><option value="nao">Não</option>';
+const packageLabel=a=>a?.pacote_pre_pago===true?'Sim':a?.pacote_pre_pago===false?'Não':'Não informado';
 const manejoOptions='<option value="">Selecione o manejo</option><option value="nao_se_aplica">Não se aplica</option><option value="ansioso">Pet Ansioso</option><option value="agressivo">Pet Agressivo</option><option value="idoso">Pet Idoso</option>';
 let bookings=[],busy=false,refreshing=false;
 const preSelections=new Map();
@@ -87,7 +89,9 @@ function render(day=datePicker()){
     if(r.status==='programado' && current){
       footer='<div class="preentrada-actions">'
         +'<label class="preentrada-manejo-label">Manejo especial (somente informativo)'
-        +'<select data-checkin-manejo="'+esc(r.programacao_id)+'" required>'+manejoOptions+'</select></label>'+
+        +'<select data-checkin-manejo="'+esc(r.programacao_id)+'" required>'+manejoOptions+'</select></label>'
+        +'<label class="preentrada-manejo-label">Utilizou pacote pré-pago? (obrigatório)'
+        +'<select data-checkin-pacote="'+esc(r.programacao_id)+'" required>'+packageOptions+'</select></label>'+
         plannedRows(r)+
         '<button type="button" class="btn btn-primary" data-checkin="'+esc(r.programacao_id)+'">✓ Dar entrada</button>'+
         '<button type="button" class="btn btn-danger" data-open-reject="'+esc(r.programacao_id)+'">Recusar atendimento</button>'+
@@ -109,7 +113,8 @@ function render(day=datePicker()){
     }else if(r.status==='programado'){
       footer='<div class="preentrada-info">Pré-cadastro disponível para conferência. Entrada e recusa liberadas em '+esc(pretty(day))+'.</div>';
     }else if(r.status==='entrada_realizada'){
-      footer='<div class="preentrada-info">Entrada realizada. Animal enviado para a fila do prestador.</div>';
+      const recorded=state.attendances.find(a=>a.id===r.atendimento_id||a.agendamento_id===r.solicitacao_id);
+      footer='<div class="preentrada-info">Entrada realizada. Pacote pré-pago: <b>'+esc(packageLabel(recorded))+'</b>. Animal enviado para a fila do prestador.</div>';
     }else{
       footer='<div class="preentrada-info"><strong>Recusa:</strong> '+esc(labels[r.motivo_recusa]||'Outro')+
         (r.justificativa_outro?' · '+esc(r.justificativa_outro):'')+'</div>';
@@ -131,11 +136,17 @@ async function checkin(id){
   const r=bookings.find(x=>x.programacao_id===id);
   if(!r || r.status!=='programado')return;
   const manejo=byId('programacaoEntradaList').querySelector('[data-checkin-manejo="'+id+'"]')?.value;
+  const pacoteValue=byId('programacaoEntradaList').querySelector('[data-checkin-pacote="'+id+'"]')?.value;
   if(!manejo){notify('Selecione o manejo especial (ou Não se aplica) para registrar a entrada.','error');return;}
+  if(!['sim','nao'].includes(pacoteValue)){
+    notify('Informe se este atendimento utiliza pacote pré-pago (Sim ou Não).','error');return;
+  }
   if(!confirm('Confirmar a chegada de '+r.pet_nome+' e enviar para a fila de espera?'))return;
   busy=true;
   try{
-    const {data:registroId,error}=await supabase.rpc('registrar_entrada_programada_v3',{p_programacao_id:id,p_manejo:manejo});
+    const {data:registroId,error}=await supabase.rpc('registrar_entrada_programada_v4',{
+      p_programacao_id:id,p_manejo:manejo,p_pacote_pre_pago:pacoteValue==='sim'
+    });
     if(error)throw error;
     // A entrada é definitiva; eventual falha no planejamento não apaga o registro.
     try{

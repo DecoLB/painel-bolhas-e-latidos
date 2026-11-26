@@ -25,6 +25,7 @@ const racaLabel = r => r.raca || 'Não informada';
 const transporteLabel = r => r.transporte_bolhas===true?'Bolhas & Latidos':r.transporte_bolhas===false?'Tutor':'Não informado';
 const manejoLabels={nao_se_aplica:'Não se aplica',ansioso:'Pet Ansioso',agressivo:'Pet Agressivo',idoso:'Pet Idoso'};
 const manejoLabel=r=>manejoLabels[r.manejo]||'Não informado';
+const pacoteLabel=r=>r.pacote_pre_pago===true?'Sim':r.pacote_pre_pago===false?'Não':'Não informado';
 const additionalNames=ids=>(ids||[]).map(id=>state.additionalCatalog.find(a=>a.id===id)?.nome||'Adicional indisponível').join(', ')||'Nenhum';
 const chosenAdditions=()=>[...document.querySelectorAll('#entryAdditionalList input[type="checkbox"]:checked')].map(el=>el.value);
 function renderEntryAdditionalList(){
@@ -266,8 +267,8 @@ function renderReport() {
   renderChart('breedsChart',[...byBreed].map(([name,count])=>({name,count})));
   renderChart('speciesChart',[...bySpecies].map(([name,count])=>({name,count})));
   byId('reportTable').innerHTML = dailyRecords.map(r=>
-    '<tr><td>'+esc(r.animal_nome)+'</td><td>'+esc(especieLabel(r))+'</td><td>'+esc(racaLabel(r))+'</td><td>'+esc(transporteLabel(r))+'</td><td>'+esc(serviceName(r.servico_id))+'</td><td>'+esc(additionalNames(r.adicionais))+'</td><td>'+esc(manejoLabel(r))+'</td><td>'+esc(attendanceExecutors(r))+'</td><td>'+hourOf(r.criado_em)+'</td><td>'+hourOf(r.iniciado_em)+'</td><td>'+hourOf(r.concluido_em)+'</td><td>'+duration(minutesBetween(r.criado_em,r.iniciado_em))+'</td><td>'+duration(minutesBetween(r.iniciado_em,r.concluido_em))+'</td><td>'+statusBadge(r.status==='concluido'?'neutral':r.status==='em_execucao'?'success':'warning',r.status==='concluido'?'Concluído':r.status==='em_execucao'?'Em execução':'Aguardando')+'</td></tr>'
-  ).join('') || '<tr><td colspan="14">Nenhum atendimento registrado na data selecionada.</td></tr>';
+    '<tr><td>'+esc(r.animal_nome)+'</td><td>'+esc(especieLabel(r))+'</td><td>'+esc(racaLabel(r))+'</td><td>'+esc(pacoteLabel(r))+'</td><td>'+esc(transporteLabel(r))+'</td><td>'+esc(serviceName(r.servico_id))+'</td><td>'+esc(additionalNames(r.adicionais))+'</td><td>'+esc(manejoLabel(r))+'</td><td>'+esc(attendanceExecutors(r))+'</td><td>'+hourOf(r.criado_em)+'</td><td>'+hourOf(r.iniciado_em)+'</td><td>'+hourOf(r.concluido_em)+'</td><td>'+duration(minutesBetween(r.criado_em,r.iniciado_em))+'</td><td>'+duration(minutesBetween(r.iniciado_em,r.concluido_em))+'</td><td>'+statusBadge(r.status==='concluido'?'neutral':r.status==='em_execucao'?'success':'warning',r.status==='concluido'?'Concluído':r.status==='em_execucao'?'Em execução':'Aguardando')+'</td></tr>'
+  ).join('') || '<tr><td colspan="15">Nenhum atendimento registrado na data selecionada.</td></tr>';
 }
 
 function renderInsights(date, done) {
@@ -288,11 +289,14 @@ function renderInsights(date, done) {
   byId('insightAppointments').textContent=String(approvedArrivals.length);
   const transportCount=arrivals.filter(r=>r.transporte_bolhas===true).length;
   byId('insightTransport').textContent=String(transportCount);
+  const packageCount=arrivals.filter(r=>r.pacote_pre_pago===true).length;
+  byId('insightPackages').textContent=String(packageCount);
   setFarol('insightEntries','neutral');
   setFarol('insightWait','neutral');
   setFarol('insightStaff',professionals.size>0?'success':'neutral');
   setFarol('insightAppointments',approvedArrivals.length>0?'success':'neutral');
   setFarol('insightTransport',transportCount>0?'warning':'neutral');
+  setFarol('insightPackages',packageCount>0?'success':'neutral');
 
   const anchor=new Date(date+'T12:00:00Z');
   const dates=Array.from({length:7},(_,i)=>{
@@ -389,6 +393,7 @@ function renderQueues() {
     '<div class="pet-detail"><b>Espécie:</b> '+esc(especieLabel(r))+' · <b>Raça:</b> '+esc(racaLabel(r))+'</div>'+
     '<div class="pet-detail"><b>Adicionais:</b> '+esc(additionalNames(r.adicionais))+'</div>'+
     '<div class="pet-detail"><b>Manejo:</b> '+esc(manejoLabel(r))+'</div>'+
+    '<div class="pet-detail"><b>Pacote pré-pago:</b> '+esc(pacoteLabel(r))+'</div>'+
     (r.transporte_bolhas!==null ? '<div class="pet-detail"><b>Transporte:</b> '+esc(transporteLabel(r))+'</div>' : '')+
     (r.tutor ? '<div class="pet-detail">Tutor: '+esc(r.tutor)+'</div>' : '')+
     (r.observacao ? '<div class="pet-detail">Obs.: '+esc(r.observacao)+'</div>' : '')+
@@ -396,7 +401,7 @@ function renderQueues() {
     '<button type="button" class="btn btn-primary" data-assume="'+esc(r.id)+'">Iniciar</button></div></div></article>'
   ).join('') || '<div class="empty">Nenhum animal aguardando atendimento.</div>';
   byId('activeList').innerHTML='<div id="v23ActiveTasks" class="v23-queue-list"></div>'+active.map(r=>
-    '<article class="pet-card farol-card farol-success">'+photoMarkup(r)+'<div class="pet-info"><div class="pet-head"><strong>'+esc(r.animal_nome)+'</strong>'+statusBadge('success','Em execução')+'</div><div class="pet-meta">'+esc(serviceName(r.servico_id))+'</div><div class="pet-detail"><b>Espécie:</b> '+esc(especieLabel(r))+' · <b>Raça:</b> '+esc(racaLabel(r))+'</div><div class="pet-detail"><b>Adicionais:</b> '+esc(additionalNames(r.adicionais))+'</div><div class="pet-detail"><b>Manejo:</b> '+esc(manejoLabel(r))+'</div><div class="pet-detail">Profissional: <strong>'+esc(professionalName(r.profissional_id))+'</strong></div><div class="pet-detail">Início: '+hourOf(r.iniciado_em)+'</div><div class="pet-actions"><button type="button" class="btn btn-primary" data-finish="'+esc(r.id)+'">Finalizar atendimento</button></div></div></article>'
+    '<article class="pet-card farol-card farol-success">'+photoMarkup(r)+'<div class="pet-info"><div class="pet-head"><strong>'+esc(r.animal_nome)+'</strong>'+statusBadge('success','Em execução')+'</div><div class="pet-meta">'+esc(serviceName(r.servico_id))+'</div><div class="pet-detail"><b>Espécie:</b> '+esc(especieLabel(r))+' · <b>Raça:</b> '+esc(racaLabel(r))+'</div><div class="pet-detail"><b>Adicionais:</b> '+esc(additionalNames(r.adicionais))+'</div><div class="pet-detail"><b>Manejo:</b> '+esc(manejoLabel(r))+'</div><div class="pet-detail"><b>Pacote pré-pago:</b> '+esc(pacoteLabel(r))+'</div><div class="pet-detail">Profissional: <strong>'+esc(professionalName(r.profissional_id))+'</strong></div><div class="pet-detail">Início: '+hourOf(r.iniciado_em)+'</div><div class="pet-actions"><button type="button" class="btn btn-primary" data-finish="'+esc(r.id)+'">Finalizar atendimento</button></div></div></article>'
   ).join('') || '<div class="empty">Nenhum atendimento em execução.</div>';
 }
 function renderTV() {
@@ -412,6 +417,7 @@ function renderTV() {
     +'<div class="tv-data-line"><span>Raça</span><strong>'+esc(racaLabel(r))+'</strong></div>'
     +'<div class="tv-data-line"><span>Adicionais</span><strong>'+esc(additionalNames(r.adicionais))+'</strong></div>'
     +'<div class="tv-data-line"><span>Manejo</span><strong>'+esc(manejoLabel(r))+'</strong></div>'
+    +'<div class="tv-data-line"><span>Pacote pré-pago</span><strong>'+esc(pacoteLabel(r))+'</strong></div>'
     +'<div class="tv-data-line"><span>Serviço</span><strong>'+esc(serviceName(r.servico_id))+'</strong></div>'
     +(running
       ? '<div class="tv-data-line"><span>Responsável</span><strong>'+esc(professionalName(r.profissional_id))+'</strong></div>'
@@ -578,9 +584,12 @@ function bindEvents() {
     const manejo=byId('entryManejo').value,porte=byId('entryPorte').value,
       pelagem=byId('entryPelagem').value;
     const adicionais=chosenAdditions();
+    const pacoteValue=byId('entryPackagePrepaid').value;
+    const pacote_pre_pago=pacoteValue==='sim';
     const horario_agendado=agendado?byId('scheduledTime').value:null;
     if(!animal_nome||!servico_id||!byId('isScheduled').value||(agendado&&!horario_agendado)||
       !['cachorro','gato'].includes(especie)||!state.breeds.some(b=>b.especie===especie&&b.nome===raca)||
+      !['sim','nao'].includes(pacoteValue)||
       !Object.hasOwn(manejoLabels,manejo)||
       !['pequeno','medio','grande'].includes(porte)||!['curto','medio','longo'].includes(pelagem)){
       notify('Preencha os campos obrigatórios, incluindo espécie, raça, porte, pelagem e manejo.','error');return;
@@ -595,7 +604,7 @@ function bindEvents() {
       }
       const {data:novo,error}=await supabase.from('atendimentos').insert({
         animal_nome,tutor:tutor||null,especie,raca,servico_id,agendado,horario_agendado,
-        manejo,porte,pelagem,adicionais,
+        manejo,porte,pelagem,adicionais,pacote_pre_pago,
         observacao:byId('entryObs').value.trim()||null,foto_path
       }).select('id').single();
       if(error)throw error;

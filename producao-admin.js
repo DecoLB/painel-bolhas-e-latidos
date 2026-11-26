@@ -1,4 +1,4 @@
-import {supabase,state,notify,esc,today} from './app.js?v=250';
+import {supabase,state,notify,esc,today} from './app.js?v=260';
 
 // O módulo só consulta valores após autenticação e reconhecimento como Administrador.
 // RLS em public.producao_valores impede a leitura pelo perfil Operacional.
@@ -67,6 +67,7 @@ function fullProductAttributions(attendances){
  }
  return results;
 }
+const packageLabel=r=>r.pacote_pre_pago===true?'Sim':r.pacote_pre_pago===false?'Não':'Não informado';
 const inAdmin=()=>state.role==='admin'&&!$('appShell').hidden;
 const isVisible=()=>inAdmin()&& !$('admin-producao').hidden&&!$('page-admin').hidden;
 const note=(value,error=false)=>{const node=$('prodMessage');node.textContent=value;node.classList.toggle('prod-error',error);};
@@ -94,7 +95,7 @@ async function fetchAllCompleted(start,end){
   for(let page=0;page<20;page++){
     const from=page*250;
     const {data,error}=await supabase.from('atendimentos')
-      .select('id,animal_nome,servico_id,profissional_id,especie,porte,pelagem,adicionais,criado_em,iniciado_em,concluido_em,status')
+      .select('id,animal_nome,servico_id,profissional_id,especie,porte,pelagem,adicionais,pacote_pre_pago,criado_em,iniciado_em,concluido_em,status')
       .eq('status','concluido').gte('concluido_em',beginning).lt('concluido_em',endExclusive)
       .order('concluido_em',{ascending:false}).range(from,from+249);
     if(error)throw error;
@@ -150,11 +151,13 @@ async function load(){
 }
 function listFilter(){
   const professional=$('prodProfessional').value,service=$('prodService').value,
-    coverage=$('prodCoverage').value;
+    coverage=$('prodCoverage').value,packageFilter=$('prodPackage').value;
   return rows.filter(x=>(!professional||x.profissional_id===professional||
       stagesOf(x.id).some(e=>confirmedOn(e.id).some(p=>p.profissional_id===professional)))
     &&(!service||x.servico_id===service)
-    &&(!coverage||x.finance.cobertura===coverage));
+    &&(!coverage||x.finance.cobertura===coverage)
+    &&(!packageFilter||(packageFilter==='sim'?x.pacote_pre_pago===true:
+      packageFilter==='nao'?x.pacote_pre_pago===false:x.pacote_pre_pago==null)));
 }
 function group(data,key,value){
   const map=new Map();
@@ -195,6 +198,9 @@ function renderInsights(data,complete,unpriced,byProfValue,byProfVolume){
     ['Maior volume de atendimento',allProfessional.length?allProfessional[0].name+' · '+allProfessional[0].count+' atendimento(s) concluído(s).':'Sem conclusões para comparar.'],
     ['Serviço mais executado',serviceVolume.length?serviceVolume[0].name+' · '+serviceVolume[0].value+' conclusão(ões).':'Sem serviços concluídos no período.'],
     ['Adicionais realizados',extrasTotal+' item(ns) adicional(is) associado(s) a atendimentos concluídos.'],
+    ['Pacote pré-pago utilizado',data.filter(x=>x.pacote_pre_pago===true).length+
+      ' atendimento(s) com utilização informada de plano pré-pago; '+
+      data.filter(x=>x.pacote_pre_pago==null).length+' sem informação histórica.'],
     ['Lacunas para precificação',noDim+' sem espécie/porte/pelagem; '+missing+' sem tabela aplicável; '+pricePartial+' com valores parciais.'],
     ['Histórico e rastreabilidade',retros+' conclusão(ões) retroativas. O valor registrado na conclusão não muda com ajustes futuros de tabela.']
   ];
@@ -221,7 +227,7 @@ function renderDaily(data){
     +'<span>'+x.n+' concluído(s) · '+x.priced+' com preço fechado · <b>'+currency(x.value)+'</b></span></div>').join('');
 }
 function renderTable(data){
-  if(!data.length){$('prodRows').innerHTML='<tr><td colspan="9">Sem atendimentos concluídos para os filtros aplicados.</td></tr>';return;}
+  if(!data.length){$('prodRows').innerHTML='<tr><td colspan="10">Sem atendimentos concluídos para os filtros aplicados.</td></tr>';return;}
   const cols=data.map(r=>{
     const f=r.finance,closed=f.cobertura==='completo';
     const value=Number.isInteger(f.valor_referencia_centavos)
@@ -232,6 +238,7 @@ function renderTable(data){
     const badge='<span class="tag farol-tag status-'+(coverageBadge[f.cobertura]||'neutral')+'"><span class="farol-dot"></span>'+esc(coverage)+'</span>';
     const note=f.observacao?(f.observacao+' · '):'';
     return '<tr><td>'+esc(date)+'</td><td>'+esc(r.animal_nome)+'</td>'
+      +'<td>'+esc(packageLabel(r))+'</td>'
       +'<td>'+esc(executorsOf(r))+'</td>'
       +'<td>'+esc(serviceName(r.servico_id))+'</td><td>'+esc(r.porte||'N/I')+' / '+esc(r.pelagem||'N/I')+'</td>'
       +'<td>'+esc(extraNames(r.adicionais).join(', ')||'Nenhum')+'</td>'
@@ -302,7 +309,7 @@ function render(){
 }
 function exportCsv(){
   if(!inAdmin()||!shown.length)return;
-  const headers=['Conclusão','Animal','Profissional','Serviço','Espécie','Porte','Pelagem','Adicionais','Espera (min)','Execução (min)','Cobertura','Estimativa em reais','Origem','Observação'];
+  const headers=['Conclusão','Animal','Pacote pré-pago','Profissional','Serviço','Espécie','Porte','Pelagem','Adicionais','Espera (min)','Execução (min)','Cobertura','Estimativa em reais','Origem','Observação'];
   const safe=value=>{
     const s=String(value??'').replace(/^[=+@\-\t\r]/,"'$&");
     return '"'+s.replaceAll('"','""')+'"';
@@ -310,7 +317,7 @@ function exportCsv(){
   const items=shown.map(r=>{
     const f=r.finance;
     return [
-      r.concluido_em,r.animal_nome,executorsOf(r),serviceName(r.servico_id),
+      r.concluido_em,r.animal_nome,packageLabel(r),executorsOf(r),serviceName(r.servico_id),
       r.especie,r.porte,r.pelagem,extraNames(r.adicionais).join(' / '),
       minutes(r.criado_em,r.iniciado_em),minutes(r.iniciado_em,r.concluido_em),
       coverageLabel[f.cobertura],
@@ -333,7 +340,7 @@ $('prodPeriod').addEventListener('change',()=>{
   planLoad();
 });
 for(const id of ['prodStartDate','prodEndDate'])$(id).addEventListener('change',planLoad);
-for(const id of ['prodProfessional','prodService','prodCoverage'])$(id).addEventListener('change',()=>{if(loadedOnce)render();});
+for(const id of ['prodProfessional','prodService','prodCoverage','prodPackage'])$(id).addEventListener('change',()=>{if(loadedOnce)render();});
 $('prodRefresh').addEventListener('click',load);
 $('prodCsv').addEventListener('click',exportCsv);
 document.querySelectorAll('[data-admin-tab="producao"]').forEach(button=>button.addEventListener('click',()=>{

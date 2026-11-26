@@ -1,0 +1,23 @@
+/* V2.6: identificação informativa de consumo de pacote pré-pago. */
+.v26-package-line{color:#6a3b17;font-size:12px;line-height:1.4;padding:3px 0;font-weight:650}
+.v26-package-audit{margin:11px 0;border:1px solid #e9d3bc;background:#fff8f0;border-radius:11px;padding:11px 13px}
+.v26-package-audit>strong{font-weight:850;color:#8d4307;font-size:13px}
+.v26-package-edit{margin-top:8px;font-size:12px}
+.v26-package-edit summary{cursor:pointer;color:#924807;font-weight:760;padding:4px}
+.v26-package-edit label{display:block;margin:10px 0 6px}
+.v26-package-edit select,.v26-package-edit textarea{display:block;width:100%;max-width:570px}
+.v26-package-edit button{margin:8px 0 0}
+@media print{
+ .v26-package-edit{display:none!important}
+ /* Relatório diário recebeu coluna explícita Pacote pré-pago: soma de larguras = 100%. */
+ .print-daily-table th:nth-child(1){width:12%!important}
+ .print-daily-table th:nth-child(2){width:11%!important}
+ .print-daily-table th:nth-child(3){width:7%!important}
+ .print-daily-table th:nth-child(4){width:18%!important}
+ .print-daily-table th:nth-child(5){width:12%!important}
+ .print-daily-table th:nth-child(6){width:15%!important}
+ .print-daily-table th:nth-child(7){width:6%!important}
+ .print-daily-table th:nth-child(8){width:7%!important}
+ .print-daily-table th:nth-child(9){width:6%!important}
+ .print-daily-table th:nth-child(10){width:6%!important}
+}

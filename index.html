@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="./etapas-v23.css?v=231">
   <link rel="stylesheet" href="./tabelas-v24.css?v=240">
   <link rel="stylesheet" href="./impressao-v25.css?v=250">
+  <link rel="stylesheet" href="./pacotes-v26.css?v=260">
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -44,7 +45,7 @@
       <p id="setupInfo" class="setup-info" hidden>O banco ainda não foi conectado. Configure o projeto Supabase em config.js para habilitar o acesso.</p>
       
     </form>
-    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 2.5.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 2.6.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
   </section>
   <div id="appShell" class="shell" hidden>
     <header class="topbar">
@@ -101,6 +102,7 @@
               <article class="insight-mini"><span>Profissionais em atividade</span><strong id="insightStaff">0</strong><small>Que iniciaram atendimentos na data</small></article>
               <article class="insight-mini"><span>Entradas de agendamentos</span><strong id="insightAppointments">0</strong><small>Pré-cadastros recebidos na data</small></article>
               <article class="insight-mini"><span>Transporte Bolhas solicitado</span><strong id="insightTransport">0</strong><small>Atendimentos que informaram necessidade de transporte na data</small></article>
+              <article class="insight-mini"><span>Utilizações de pacote pré-pago</span><strong id="insightPackages">0</strong><small>Entradas marcadas como uso de pacote na data</small></article>
             </div>
             <div class="insights-details">
               <article class="panel insight-trend-panel">
@@ -122,7 +124,7 @@
             <section class="panel"><div class="panel-heading"><h2>Raças mais atendidas</h2><p>Quantidade concluída por raça no dia selecionado</p></div><div id="breedsChart" class="bars"></div></section>
             <section class="panel"><div class="panel-heading"><h2>Atendimentos por espécie</h2><p>Quantidade concluída por espécie no dia selecionado</p></div><div id="speciesChart" class="bars"></div></section>
           </div>
-          <section class="panel"><div class="panel-heading"><h2>Relatório diário</h2><p>Atendimentos do dia, incluindo pendentes, com duração e responsável.</p></div><div class="table-scroll"><table><thead><tr><th>Animal</th><th>Espécie</th><th>Raça</th><th>Transporte</th><th>Serviço</th><th>Adicionais</th><th>Manejo</th><th>Profissional</th><th>Entrada</th><th>Início</th><th>Fim</th><th>Espera</th><th>Execução</th><th>Status</th></tr></thead><tbody id="reportTable"></tbody></table></div></section>
+          <section class="panel"><div class="panel-heading"><h2>Relatório diário</h2><p>Atendimentos do dia, incluindo pendentes, com duração e responsável.</p></div><div class="table-scroll"><table><thead><tr><th>Animal</th><th>Espécie</th><th>Raça</th><th>Pacote pré-pago</th><th>Transporte</th><th>Serviço</th><th>Adicionais</th><th>Manejo</th><th>Profissional</th><th>Entrada</th><th>Início</th><th>Fim</th><th>Espera</th><th>Execução</th><th>Status</th></tr></thead><tbody id="reportTable"></tbody></table></div></section>
         </div>
         <div id="admin-producao" class="admin-panel" hidden>
           <section class="prod-heading">
@@ -133,7 +135,7 @@
             </div>
             <span class="tag farol-tag status-neutral"><span class="farol-dot" aria-hidden="true"></span>Somente Administrador</span>
           </section>
-          <div class="prod-disclaimer"><strong>Critério comercial:</strong> o valor exibido por executor corresponde ao preço cheio do produto ou serviço efetivamente executado. No pacote Banho + Tosa, o produto contratado mantém seu preço integral, mesmo quando possui mais de um executor. Os valores por profissional são referências associadas e não devem ser somados para obter o total da operação. Estimativas parciais permanecem identificadas. Histórico sujeito à retenção operacional de até 7 dias.</div>
+          <div class="prod-disclaimer"><strong>Pacote pré-pago:</strong> indica utilização de plano pago antecipadamente, apenas para consulta. Não altera preços ou valores associados. <strong>Critério comercial:</strong> o valor exibido por executor corresponde ao preço cheio do produto ou serviço efetivamente executado. No pacote Banho + Tosa, o produto contratado mantém seu preço integral, mesmo quando possui mais de um executor. Os valores por profissional são referências associadas e não devem ser somados para obter o total da operação. Estimativas parciais permanecem identificadas. Histórico sujeito à retenção operacional de até 7 dias.</div>
           <div class="prod-toolbar no-print">
             <label>Período
               <select id="prodPeriod">
@@ -148,6 +150,9 @@
             </div>
             <label>Profissional<select id="prodProfessional"><option value="">Todos os profissionais</option></select></label>
             <label>Serviço<select id="prodService"><option value="">Todos os serviços</option></select></label>
+            <label>Pacote pré-pago
+              <select id="prodPackage"><option value="">Todos</option><option value="sim">Sim</option><option value="nao">Não</option><option value="unknown">Não informado (legado)</option></select>
+            </label>
             <label>Situação da precificação
               <select id="prodCoverage">
                 <option value="">Todas</option>
@@ -191,7 +196,7 @@
           <section class="panel prod-details-panel">
             <div class="panel-heading"><h3>Auditoria da produção por atendimento</h3><p>Valores armazenados no encerramento. “Retroativo” indica registro anterior à implantação do controle.</p></div>
             <div class="table-scroll"><table class="prod-table"><thead><tr>
-              <th>Conclusão</th><th>Pet</th><th>Profissional</th><th>Serviço</th><th>Porte / Pelagem</th>
+              <th>Conclusão</th><th>Pet</th><th>Pacote pré-pago</th><th>Profissional</th><th>Serviço</th><th>Porte / Pelagem</th>
               <th>Adicionais</th><th>Execução</th><th>Cobertura</th><th>Valor de referência</th>
             </tr></thead><tbody id="prodRows"></tbody></table></div>
           </section>
@@ -373,6 +378,10 @@
               <p>Opcional. O executor real será confirmado por atividade ao finalizar. Um profissional pode assumir várias atividades.</p>
               <div id="entryEtapasPrevistas"></div>
             </section>
+            <div class="field"><label for="entryPackagePrepaid">Este atendimento utiliza pacote pré-pago? <b>*</b></label>
+              <select id="entryPackagePrepaid" required><option value="">Selecione</option><option value="sim">Sim</option><option value="nao">Não</option></select>
+              <small>Somente informativo: identifica a utilização de serviço já pago antecipadamente. Não altera o valor de referência do serviço.</small>
+            </div>
             <div class="field"><label for="isScheduled">Serviço agendado? <b>*</b></label><select id="isScheduled" required><option value="">Selecione</option><option value="sim">Sim</option><option value="nao">Não</option></select></div>
             <div id="scheduledTimeField" class="field" hidden><label for="scheduledTime">Horário agendado <b>*</b></label><input id="scheduledTime" type="time"></div>
             <div class="field"><label for="entryObs">Observações <span>(opcional)</span></label><textarea id="entryObs" rows="4" maxlength="1000" placeholder="Informações importantes para a equipe"></textarea><small class="counter"><span id="obsCounter">0</span>/1000</small></div>
@@ -393,22 +402,22 @@
         <div class="page-heading no-print"><div><span class="eyebrow">PAINEL OPERACIONAL</span><h1>Visão do telão</h1><p>Exibição contínua das filas de atendimento.</p></div><button id="fullscreenBtn" type="button" class="btn btn-outline">Tela cheia</button></div>
         <div class="tv-header"><div class="brand"><img class="brand-logo" src="./assets/logo.webp" alt="Logo Bolhas & Latidos" onerror="this.hidden=true"><span class="brand-fallback">Bolhas <em>&</em> Latidos</span></div><div class="tv-now" id="tvClock"></div></div>
         <div class="tv-grid" id="tvGrid" data-density="single"><div class="tv-column farol-warning"><h2>Aguardando <span id="tvWaitingCount">0</span></h2><div id="tvWaiting" class="tv-list"></div></div><div class="tv-column farol-success"><h2>Em execução <span id="tvActiveCount">0</span></h2><div id="tvActive" class="tv-list"></div></div></div>
-        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 2.5.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 2.6.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
       </section>
     </main>
-    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 2.5.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
+    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 2.6.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
   </div>
   <section id="bookingPrintSheet" hidden aria-label="Ficha de programação para impressão"></section>
   <section id="dailyPrintSheet" hidden aria-label="Relatório diário tabular para impressão"></section>
   <section id="auditPrintSheet" hidden aria-label="Conferência de fichas tabular para impressão"></section>
   <script src="./config.js?v=20261125-2"></script>
-  <script type="module" src="./app.js?v=250"></script>
-  <script type="module" src="./etapas-v23.js?v=250"></script>
-  <script type="module" src="./producao-admin.js?v=250"></script>
-  <script type="module" src="./comercial-admin.js?v=250"></script>
-  <script type="module" src="./tabelas-v24.js?v=250"></script>
-  <script type="module" src="./agendamento-admin.js?v=250"></script>
-  <script type="module" src="./programacao-entrada.js?v=250"></script>
-  <script type="module" src="./impressao-v25.js?v=250"></script>
+  <script type="module" src="./app.js?v=260"></script>
+  <script type="module" src="./etapas-v23.js?v=260"></script>
+  <script type="module" src="./producao-admin.js?v=260"></script>
+  <script type="module" src="./comercial-admin.js?v=260"></script>
+  <script type="module" src="./tabelas-v24.js?v=260"></script>
+  <script type="module" src="./agendamento-admin.js?v=260"></script>
+  <script type="module" src="./programacao-entrada.js?v=260"></script>
+  <script type="module" src="./impressao-v25.js?v=260"></script>
 </body>
 </html>

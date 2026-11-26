@@ -1,4 +1,4 @@
-import {supabase,state,esc,today,notify} from './app.js?v=250';
+import {supabase,state,esc,today,notify} from './app.js?v=260';
 
 // Impressão somente a partir do perfil administrativo: os dados financeiros não são públicos.
 const el=id=>document.getElementById(id);
@@ -19,6 +19,7 @@ const professional=id=>state.professionals.find(p=>p.id===id)?.nome||'Não ident
 const extra=ids=>(ids||[]).map(id=>state.additionalCatalog.find(a=>a.id===id)?.nome||'Adicional não cadastrado').join(', ')||'Nenhum';
 const canPrint=()=>state.role==='admin'&&!el('appShell').hidden;
 const status=r=>({aguardando:'Aguardando',em_execucao:'Em execução',concluido:'Concluído'}[r.status]||r.status||'—');
+const packageLabel=r=>r?.pacote_pre_pago===true?'Sim':r?.pacote_pre_pago===false?'Não':'Não informado';
 const execs=pet=>{
  const steps=state.etapas.filter(e=>e.atendimento_id===pet.id);
  if(!steps.length)return pet.profissional_id?professional(pet.profissional_id):'Não atribuído';
@@ -36,7 +37,7 @@ const printHead=(title,date,count)=>
  '<td class="print-report-count"><b>'+count+' registro(s)</b><small>Impresso em '+esc(formatStamp.format(new Date()))+'</small></td>'+
  '</tr></tbody></table>';
 const printFooter=()=>
- '<footer class="print-report-footer"><span>Versão 2.5.0</span><span>Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>';
+ '<footer class="print-report-footer"><span>Versão 2.6.0</span><span>Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>';
 const tableHeader=names=>'<thead><tr>'+names.map(n=>'<th scope="col">'+esc(n)+'</th>').join('')+'</tr></thead>';
 const printNow=(mode,html)=>{
  const target=el(mode==='print-daily'?'dailyPrintSheet':'auditPrintSheet');
@@ -67,6 +68,7 @@ function dailyReport(){
   const handling={nao_se_aplica:'Não se aplica',ansioso:'Ansioso',agressivo:'Agressivo',idoso:'Idoso'}[r.manejo]||'Não informado';
   return '<tr><td>'+cell((i+1)+'. '+r.animal_nome,r.tutor_nome?'Tutor: '+r.tutor_nome:'')+'</td>'
    +'<td>'+cell(species,breed)+'</td>'
+   +'<td>'+simple(packageLabel(r))+'</td>'
    +'<td>'+cell(service(r.servico_id),'Adicionais: '+extra(r.adicionais))+'</td>'
    +'<td>'+cell(handling,'Transporte: '+transport)+'</td>'
    +'<td>'+simple(execs(r))+'</td>'
@@ -75,10 +77,10 @@ function dailyReport(){
    +'<td class="print-time">'+cell(duration(r.criado_em,r.iniciado_em),'Exec.: '+duration(r.iniciado_em,r.concluido_em))+'</td>'
    +'<td>'+simple(status(r))+'</td></tr>';
  }).join('');
- const empty='<tr><td colspan="9" class="print-empty">Nenhum atendimento registrado nesta data.</td></tr>';
+ const empty='<tr><td colspan="10" class="print-empty">Nenhum atendimento registrado nesta data.</td></tr>';
  const html=printHead('Relatório diário de atendimentos',date,records.length)
   +'<table class="print-data-table print-daily-table">'+tableHeader([
-   'Pet / tutor','Espécie / raça','Serviço / adicionais','Manejo / transporte','Executores','Entrada','Início / fim','Espera / execução','Situação'])
+   'Pet / tutor','Espécie / raça','Pacote pré-pago','Serviço / adicionais','Manejo / transporte','Executores','Entrada','Início / fim','Espera / execução','Situação'])
   +'<tbody>'+(rows||empty)+'</tbody></table>'
   +'<p class="print-report-note">Horários em São Paulo. Serviços compostos aparecem como um único atendimento; os profissionais foram identificados nas atividades registradas.</p>'
   +printFooter();
@@ -122,7 +124,8 @@ async function auditReport(){
     const who=state.etapaProfissionais.filter(p=>p.etapa_id===stage.id&&p.papel==='confirmado')
       .map(p=>professional(p.profissional_id));
     const price=stage.tipo==='principal'?snapshot?.valor_base_centavos:stepPrices.get(stage.id);
-    return '<tr><td>'+cell((++idx===1?pet.animal_nome:pet.animal_nome),pet.raca||'')+'</td>'
+    return '<tr><td>'+cell((++idx===1?pet.animal_nome:pet.animal_nome),
+      (pet.raca||'')+' · Pacote pré-pago: '+packageLabel(pet))+'</td>'
      +'<td>'+simple(stage.tipo==='principal'?service(pet.servico_id):stage.nome)+'</td>'
      +'<td>'+simple(stage.nome)+'</td>'
      +'<td>'+simple(who.join(', ')||'Não confirmado')+'</td>'

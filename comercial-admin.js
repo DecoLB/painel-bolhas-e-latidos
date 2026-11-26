@@ -1,4 +1,4 @@
-import {supabase,state,notify,esc} from './app.js?v=250';
+import {supabase,state,notify,esc} from './app.js?v=260';
 const byId=id=>document.getElementById(id);
 const MONEY=Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
 let prices=[],additionalPrices=[];
