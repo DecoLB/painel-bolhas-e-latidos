@@ -113,3 +113,6 @@
  body.v23-print-fichas #admin-conferencia{display:block!important}
  body.v23-print-fichas .v23-audit-card{break-inside:avoid}
 }
+/* Planejamento do pré-cadastro: ocupa toda a linha antes dos botões de entrada/recusa. */
+.preentrada-actions>.v23-entry-plan{flex:1 1 100%;width:100%;min-width:0;margin:9px 0;box-sizing:border-box}
+.preentrada-actions>.v23-entry-plan .v23-person-grid{max-width:100%}

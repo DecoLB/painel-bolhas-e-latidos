@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="./especie-v20.css?v=200">
   <link rel="stylesheet" href="./comercial-v21.css?v=210">
   <link rel="stylesheet" href="./producao-v22.css?v=220">
-  <link rel="stylesheet" href="./etapas-v23.css?v=230">
+  <link rel="stylesheet" href="./etapas-v23.css?v=231">
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -113,7 +113,7 @@
             </div>
           </section>
           <div class="split">
-            <section class="panel"><div class="panel-heading"><h2>Atendimentos por profissional</h2><p>Quantidade concluída no dia</p></div><div id="professionalsChart" class="bars"></div></section>
+            <section class="panel"><div class="panel-heading"><h2>Atividades por profissional</h2><p>Atividades concluídas no dia; registros legados contam como um atendimento</p></div><div id="professionalsChart" class="bars"></div></section>
             <section class="panel"><div class="panel-heading"><h2>Serviços mais realizados</h2><p>Quantidade concluída no dia</p></div><div id="servicesChart" class="bars"></div></section>
           </div>
           <div class="split">
@@ -176,11 +176,11 @@
           </section>
           <div class="prod-chart-grid">
             <section class="panel"><div class="panel-heading"><h3>Valor estimado por profissional</h3><p>Ranking apenas de atendimentos com preços fechados.</p></div><div id="prodProfessionalValue" class="prod-bars"></div></section>
-            <section class="panel"><div class="panel-heading"><h3>Quantidade por profissional</h3><p>Atendimentos concluídos, incluindo casos sem preço.</p></div><div id="prodProfessionalVolume" class="prod-bars"></div></section>
+            <section class="panel"><div class="panel-heading"><h3>Atividades por profissional</h3><p>Quantidade de atividades concluídas, incluindo serviços sem preço.</p></div><div id="prodProfessionalVolume" class="prod-bars"></div></section>
             <section class="panel"><div class="panel-heading"><h3>Serviços mais executados</h3><p>Quantidade concluída por serviço.</p></div><div id="prodServiceVolume" class="prod-bars"></div></section>
             <section class="panel"><div class="panel-heading"><h3>Serviços com maior valor associado</h3><p>Valores estimados e fechados por serviço principal.</p></div><div id="prodServiceValue" class="prod-bars"></div></section>
             <section class="panel"><div class="panel-heading"><h3>Adicionais mais solicitados</h3><p>Frequência nos atendimentos concluídos, sem preço unitário.</p></div><div id="prodAdditionalVolume" class="prod-bars"></div></section>
-            <section class="panel"><div class="panel-heading"><h3>Tempo médio por profissional</h3><p>Minutos de execução dos atendimentos concluídos.</p></div><div id="prodProfessionalTime" class="prod-bars"></div></section>
+            <section class="panel"><div class="panel-heading"><h3>Tempo médio por profissional</h3><p>Minutos por atividade concluída; legado usa duração do atendimento.</p></div><div id="prodProfessionalTime" class="prod-bars"></div></section>
           </div>
           <section class="panel v23-prod-block"><div class="panel-heading"><h3>Produção por atividade e profissional</h3><p>Distribuição de valores por banho, tosa e adicionais, com rateio sem duplicação. Somente valores estimados, não recebimentos.</p></div>
             <div id="v23Production" aria-live="polite"><div class="empty">Carregando detalhamento por atividade...</div></div>
