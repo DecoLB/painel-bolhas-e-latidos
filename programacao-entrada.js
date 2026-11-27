@@ -1,4 +1,4 @@
-import {supabase,state,notify,esc,today,refresh} from './app.js?v=260';
+import {supabase,state,notify,esc,today,refresh} from './app.js?v=270';
 
 const byId=id=>document.getElementById(id);
 const plusDays=(iso,n)=>{const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};

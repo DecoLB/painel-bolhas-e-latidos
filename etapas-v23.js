@@ -1,4 +1,4 @@
-import {supabase,state,notify,esc,today,refresh} from './app.js?v=260';
+import {supabase,state,notify,esc,today,refresh} from './app.js?v=270';
 
 // V2.3: atividades e executores, sem preços nas telas operacionais.
 const $=id=>document.getElementById(id);

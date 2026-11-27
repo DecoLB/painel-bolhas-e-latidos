@@ -1,0 +1,98 @@
+/* V2.7.0 — Controle financeiro, restrito ao Administrador. */
+.fin27-shell,.fin27-detail,.fin27-audit-panel{margin-bottom:18px}
+.fin27-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-end;flex-wrap:wrap}
+.fin27-head h2{font-size:clamp(22px,3vw,30px);line-height:1.2;margin:7px 0}
+.fin27-head p{max-width:680px;color:#67574d;margin:0;line-height:1.5}
+.fin27-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:end}
+.fin27-toolbar label{display:flex;flex-direction:column;font-weight:750;color:#675043;gap:6px;font-size:12px}
+.fin27-toolbar input,.fin27-toolbar select{min-height:42px;border:1px solid #e7d2c1;border-radius:10px;padding:8px 11px;background:#fff;color:#2b2421}
+.fin27-toolbar .btn{white-space:nowrap;min-height:42px}
+.fin27-banner{font-size:13px;min-height:19px;color:#81523b;margin:12px 0}
+.fin27-banner[data-kind=error]{color:#9a2831}
+.fin27-banner[data-kind=success]{color:#0d7256}
+.fin27-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}
+.fin27-kpi{padding:16px;border:1px solid #efdbc9;border-radius:15px;background:white;
+ transition:transform .2s,box-shadow .2s}
+.fin27-kpi:hover{transform:translateY(-2px);box-shadow:0 8px 22px #5a301014}
+.fin27-kpi small{display:block;font-size:12px;color:#695b50;min-height:32px}
+.fin27-kpi strong{display:block;font-size:clamp(20px,2.2vw,29px);color:#ac4c07;font-variant-numeric:tabular-nums;margin:6px 0}
+.fin27-kpi span{font-size:11px;color:#8c7161}
+.fin27-statusbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 0}
+.fin27-pill{display:inline-flex;align-items:center;gap:7px;background:#f2e8dc;
+ border-radius:999px;padding:7px 12px;font-size:12px;font-weight:800;color:#8c4b15}
+.fin27-pill[data-state=fechado]{background:#e6f4ed;color:#197455}
+.fin27-pill[data-state=em_conferencia]{background:#fff0d9;color:#986006}
+.fin27-table-wrap{margin:12px 0}
+.fin27-table,.fin27-components,.fin27-payments,.fin27-audit-table{border-collapse:collapse;
+ width:100%;font-size:13px}
+.fin27-table th,.fin27-components th,.fin27-payments th,.fin27-audit-table th{
+ padding:12px 9px;text-align:left;color:#695344;border-bottom:2px solid #ead8c6;font-size:11px;white-space:nowrap}
+.fin27-table td,.fin27-components td,.fin27-payments td,.fin27-audit-table td{
+ padding:11px 9px;border-bottom:1px solid #efe4d9;vertical-align:top;line-height:1.4}
+.fin27-table tbody tr:hover,.fin27-components tbody tr:hover{background:#fff5ea}
+.fin27-table td strong{display:block;font-size:13px;color:#1d1c1a}
+.fin27-table td small{display:block;color:#7b7169}
+.fin27-table button[data-fin27-pet]{background:white;border:1px solid #d99c72;
+ border-radius:9px;padding:7px 11px;color:#a34709;font-weight:800;cursor:pointer}
+.fin27-table button[data-fin27-pet]:hover{background:#fff0dc;border-color:#f08025}
+.fin27-help{margin-top:12px;font-size:12px;color:#806a5c;line-height:1.6}
+.fin27-detail h3{font-size:20px;margin:0 0 5px}
+.fin27-detail .fin27-detail-info{display:flex;gap:8px 20px;flex-wrap:wrap;
+ font-size:12px;color:#6e594b;margin:8px 0 20px}
+.fin27-detail h4{font-size:15px;margin:20px 0 7px}
+.fin27-components input,.fin27-payments input,.fin27-components select,
+.fin27-detail select,.fin27-detail textarea{width:100%;min-height:39px;padding:7px 9px;
+ border:1px solid #e7cdb8;border-radius:8px;background:white;font-size:13px}
+.fin27-components input{min-width:85px;max-width:135px}
+.fin27-components select{min-width:122px}
+.fin27-detail textarea{resize:vertical;min-height:62px}
+.fin27-edit-row{display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin:10px 0}
+.fin27-edit-row label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#695044;flex:1 1 150px}
+.fin27-edit-row .btn{min-height:40px}
+.fin27-detail .fin27-component-actions{display:flex;align-items:end;gap:8px;flex-wrap:wrap;margin:12px 0}
+.fin27-note{padding:10px 12px;background:#fff8ee;border-radius:9px;font-size:12px;color:#764c2e;line-height:1.5}
+.fin27-payments button{border-radius:7px;border:1px solid #dcbbaa;background:white;padding:5px 8px;color:#ab4f16}
+.fin27-tag{display:inline-flex;padding:4px 8px;border-radius:99px;background:#f5eada;font-size:11px;font-weight:750}
+.fin27-tag.good{background:#e4f3ed;color:#18734a}
+.fin27-tag.bad{background:#fae4e4;color:#982a2a}
+.fin27-audit-table td{font-size:12px}
+.fin27-audit-table td:nth-child(3){max-width:400px}
+.fin27-hidden{display:none!important}
+@media(max-width:1050px){.fin27-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.fin27-kpis{grid-template-columns:1fr}
+ .fin27-toolbar{width:100%}.fin27-toolbar label{width:100%}.fin27-toolbar .btn{flex:1}
+ .fin27-detail .fin27-edit-row label{flex:1 1 100%}}
+@media screen{#financePrintSheet{display:none!important}}
+@page{size:A4 landscape;margin:10mm 9mm 11mm}
+@media print{
+ body.print-finance #appShell,body.print-finance #loginScreen,body.print-finance #toast,
+ body.print-finance #dailyPrintSheet,body.print-finance #auditPrintSheet,body.print-finance #bookingPrintSheet{display:none!important}
+ body.print-finance #financePrintSheet{display:block!important;position:static!important;
+ width:100%!important;max-width:none!important;overflow:visible!important;
+ padding:0!important;margin:0!important;background:#fff!important;box-shadow:none!important}
+ #financePrintSheet *{box-sizing:border-box!important;box-shadow:none!important;text-shadow:none!important}
+ #financePrintSheet table{width:100%!important;border-collapse:collapse!important;table-layout:fixed!important;
+ font:8pt Arial,Helvetica,sans-serif!important}
+ #financePrintSheet thead{display:table-header-group!important}
+ #financePrintSheet tfoot{display:table-footer-group!important}
+ #financePrintSheet tr,#financePrintSheet tbody{break-inside:avoid-page!important;page-break-inside:avoid!important}
+ #financePrintSheet th,#financePrintSheet td{border:1px solid #c6b9ae!important;text-align:left!important;
+ padding:2.2mm 1.5mm!important;vertical-align:top!important;white-space:normal!important;
+ overflow-wrap:anywhere!important;font-size:7.8pt!important}
+ #financePrintSheet th{background:#f3e5d7!important;font-weight:800!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ #financePrintSheet h1{font:bold 14pt Arial;margin:0 0 3mm}
+ #financePrintSheet .fin27-print-head{display:flex;justify-content:space-between;align-items:center;
+ margin-bottom:5mm;border-bottom:2px solid #ca6c24;padding-bottom:3mm}
+ #financePrintSheet .fin27-print-head img{width:15mm;height:15mm;object-fit:contain}
+ #financePrintSheet .fin27-print-head p,#financePrintSheet .fin27-print-note{font:8pt/1.35 Arial}
+ #financePrintSheet .fin27-print-totals{margin-top:3mm;font:9pt Arial}
+ #financePrintSheet footer{border-top:1px solid #999;margin-top:5mm;padding-top:2mm;
+ font:7pt Arial;display:flex;justify-content:space-between}
+}
+
+.fin27-audit-detail td{background:#fffaf5!important}
+.fin27-audit-detail summary{cursor:pointer;color:#9a4e12;font-size:12px;font-weight:750}
+.fin27-audit-diff{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:9px 0}
+.fin27-audit-diff pre{max-height:230px;overflow:auto;white-space:pre-wrap;word-break:break-word;background:#f8eee3;padding:10px;border-radius:7px;font:11px/1.5 monospace}
+@media(max-width:650px){.fin27-audit-diff{grid-template-columns:1fr}}
+@media print{.fin27-audit-detail{display:none!important}}

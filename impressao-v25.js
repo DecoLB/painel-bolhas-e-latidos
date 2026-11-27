@@ -1,4 +1,4 @@
-import {supabase,state,esc,today,notify} from './app.js?v=260';
+import {supabase,state,esc,today,notify} from './app.js?v=270';
 
 // Impressão somente a partir do perfil administrativo: os dados financeiros não são públicos.
 const el=id=>document.getElementById(id);
@@ -37,7 +37,7 @@ const printHead=(title,date,count)=>
  '<td class="print-report-count"><b>'+count+' registro(s)</b><small>Impresso em '+esc(formatStamp.format(new Date()))+'</small></td>'+
  '</tr></tbody></table>';
 const printFooter=()=>
- '<footer class="print-report-footer"><span>Versão 2.6.0</span><span>Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>';
+ '<footer class="print-report-footer"><span>Versão 2.7.0</span><span>Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>';
 const tableHeader=names=>'<thead><tr>'+names.map(n=>'<th scope="col">'+esc(n)+'</th>').join('')+'</tr></thead>';
 const printNow=(mode,html)=>{
  const target=el(mode==='print-daily'?'dailyPrintSheet':'auditPrintSheet');

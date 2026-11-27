@@ -1,3 +1,36 @@
+## V2.7.0 — Controle e fechamento financeiro aprovado (27/11/2026)
+
+**Objetivo:** reproduzir o mapa diário do cliente e distinguir valores de referência, itens cobertos por pacote pré-pago, previsão de cobrança e recebimentos efetivamente registrados. **Não calcular comissões nem repasses.** O sistema operacional, a precificação vigente e as atribuições de profissionais permanecem preservados.
+
+### Administrador → Fechamento diário
+- Nova guia com data de referência, filtros **Todos / Utilizações de pacote pré-pago / Sem pacote / Não informado**, cards de produção (serviços + adicionais + transporte informado), valores cobertos por pacote, cobrança prevista, recebimentos confirmados na data, pendências de recebimento dos atendimentos, transporte e fichas conferidas.
+- Mapa diário usa automaticamente os atendimentos concluídos do dia, valores congelados em `producao_valores`, atividades realizadas e executores confirmados. **Um atendimento aparece uma vez no consolidado**, mesmo quando várias pessoas executam um serviço composto.
+- Seleção de atendimento permite conferir e corrigir **cada item**: preço de tabela original congelado, valor de referência corrigido, cobertura por pacote e valor final cobrado. Transporte é um item **independente** e só nasce automaticamente quando informado no atendimento; também pode ser acrescentado pelo Administrador com justificativa. O sistema **nunca supõe R$ 25 de transporte**.
+- Pacote pré-pago **Sim** marca o serviço principal como coberto inicialmente. A cobertura de adicionais e transporte não é presumida e precisa de confirmação do Administrador; itens não esclarecidos ficam **indefinidos**, nunca R$ 0. Registros históricos sem informação de pacote permanecem `Não informado`. Alterar o marcador de pacote em qualquer tela administrativa reabre a conferência financeira e exige revalidar a cobertura por item.
+- **Valor de produção / referência:** soma dos produtos e transporte com valores conhecidos, sem multiplicar executores. **Cobrança prevista:** somente itens não cobertos; valores sem cobertura ou preço são marcados como parciais. **Recebido:** exclusivamente lançamentos individuais confirmados no banco, por data real de recebimento. **Pendente:** previsão dos atendimentos concluídos no dia menos pagamentos confirmados nesses atendimentos (qualquer data), sem pressupor recebimento.
+- Pagamentos são lançados manualmente com valor, data, meio (Dinheiro, Débito, Crédito, PIX, Outro) e justificativa; não ocorre importação automática da legenda antiga `D$/C/D/C/C` enquanto o cliente não confirmar o significado. Múltiplos lançamentos manuais por atendimento são permitidos, sem qualquer divisão automática. Cancelamento mantém o registro e gera trilha de auditoria.
+- **Conferência:** exige que todas as coberturas e os valores de referência dos componentes estejam definidos, inclusive os cobertos pelo pacote. O preço efetivamente cobrado pode ser definido separadamente sem alterar a referência original. O fechamento `pendente → em conferência → fechado` exige conferência de todos os atendimentos concluídos. Pendências de recebimento são exibidas separadamente e não são presumidas como quitadas. Correções posteriores reabrem automaticamente o fechamento, limpam a conferência do atendimento alterado e exigem justificativa.
+- **Auditoria:** `financeiro_auditoria` guarda valor anterior/posterior, evento, justificativa, administrador e horário. O usuário pode expandir o antes/depois no painel. O painel mantém acesso somente a Administradores por RLS e validação nas RPCs; o perfil Operacional não tem leitura de nenhuma das tabelas financeiras.
+- **Relatórios:** mapa diário tabular A4 horizontal e CSV com filtros de pacote, incluindo valores integrais, cobertura, cobrança e pagamentos. Os valores recebidos por atendimento só são lançados uma vez nas exportações, evitando somas duplicadas entre itens. Relatório de serviços/profissionais permanece na guia Produção & Valores.
+- **Retenção:** não alteramos a purga operacional dos atendimentos. Itens, recibos e auditoria com vínculo ao pet são excluídos junto com o atendimento, conforme a retenção existente. Fechamentos agregados por dia não contêm nomes de tutores/pets; a política de retenção financeira desses consolidados ainda precisa ser formalizada com o cliente. Exportar antes de excluir os dados detalhados.
+
+### Banco de dados
+- `financeiro_itens`: componentes únicos por atendimento e chave (principal, adicional ou transporte), referência original, referência corrigida, cobrança confirmada, cobertura por pacote.
+- `financeiro_pagamentos`: recebimentos individuais confirmados ou cancelados, com data e meio de pagamento.
+- `financeiro_conferencias`: conferência financeira por atendimento.
+- `financeiro_fechamentos`: estado do dia, totais congelados no fechamento e usuário responsável.
+- `financeiro_auditoria`: correções rastreáveis e reabertura de fechamento.
+- RPCs administrativas: `financeiro_preparar_dia`, `financeiro_salvar_item`, `financeiro_adicionar_transporte`, `financeiro_registrar_pagamento`, `financeiro_cancelar_pagamento`, `financeiro_conferir`, `financeiro_definir_fechamento`; `corrigir_pacote_pre_pago` integra a revisão de cobertura.
+- Migrações: `028_controle_fechamento_financeiro_v27.sql`, `029_revisao_cobertura_apos_correcao_pacote.sql`, `030_retencao_auditoria_vinculada_atendimento.sql`, `031_conferencia_exige_referencia_completa.sql`.
+
+### Testes executados
+- Administrador: preparação idempotente dos itens, correção de valores, recebimento, cancelamento, conferência, fechamento diário e reabertura após nova correção, com auditoria.
+- Operacional: RLS sem leitura dos itens, pagamentos ou histórico; RPC administrativa negada.
+- Pacote pré-pago: preço cheio permanece em produção, serviço principal coberto não compõe cobrança do dia, transporte é cobrado independentemente quando confirmado.
+- Todos os testes funcionais de banco de dados foram executados em transações com **ROLLBACK**, sem alterar os registros reais. Verificar também a prévia de impressão e o fluxo visual em homologação.
+
+**Limitações intencionais:** sem interpretação automática de `0,00+0,00`; sem valores de transporte presumidos; sem saldo de pacotes/contratos; sem conciliação bancária/operadoras; sem recebimento automático por cartão ou PIX; não alteramos retenção de dados pessoais; formas de pagamento definitivas, cobertura de adicionais pelo plano e prazo de retenção do resumo financeiro ainda dependem de aprovação.
+
 ## V2.6.0 — Registro de utilização de pacote pré-pago (26/11/2026)
 
 **Definição:** `pacote_pre_pago` indica exclusivamente se o serviço do atendimento consumiu um **plano pago antecipadamente pelo tutor**. É diferente de um serviço composto (Banho + Tosa). Não representa comissão, repasse, desconto, recebimento, saldo de créditos nem altera os preços de referência.

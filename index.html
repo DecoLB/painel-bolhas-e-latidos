@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="./tabelas-v24.css?v=240">
   <link rel="stylesheet" href="./impressao-v25.css?v=250">
   <link rel="stylesheet" href="./pacotes-v26.css?v=260">
+  <link rel="stylesheet" href="./financeiro-v27.css?v=270">
 </head>
 <body>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -45,7 +46,7 @@
       <p id="setupInfo" class="setup-info" hidden>O banco ainda não foi conectado. Configure o projeto Supabase em config.js para habilitar o acesso.</p>
       
     </form>
-    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 2.6.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+    <footer class="login-legal-footer legal-footer"><span class="version-label">Versão 2.7.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
   </section>
   <div id="appShell" class="shell" hidden>
     <header class="topbar">
@@ -74,6 +75,7 @@
         <div class="subnav">
           <button type="button" class="subnav-item active" data-admin-tab="gerencial">Visão gerencial</button>
           <button type="button" class="subnav-item" data-admin-tab="producao">Produção &amp; Valores</button>
+          <button type="button" class="subnav-item" data-admin-tab="financeiro">Fechamento diário</button>
           <button type="button" class="subnav-item" data-admin-tab="conferencia">Conferência de fichas</button>
           <button type="button" class="subnav-item" data-admin-tab="servicos">Serviços e preços</button>
           <button type="button" class="subnav-item" data-admin-tab="profissionais">Profissionais</button>
@@ -199,6 +201,37 @@
               <th>Conclusão</th><th>Pet</th><th>Pacote pré-pago</th><th>Profissional</th><th>Serviço</th><th>Porte / Pelagem</th>
               <th>Adicionais</th><th>Execução</th><th>Cobertura</th><th>Valor de referência</th>
             </tr></thead><tbody id="prodRows"></tbody></table></div>
+          </section>
+        </div>
+        <div id="admin-financeiro" class="admin-panel" hidden>
+          <section class="panel fin27-shell" aria-labelledby="fin27Title">
+            <header class="fin27-head">
+              <div><span class="eyebrow">CONTROLE FINANCEIRO · ACESSO ADMINISTRATIVO</span>
+                <h2 id="fin27Title">Conferência e fechamento diário</h2>
+                <p>Preços de referência, cobertura de pacote e recebimentos são informações distintas. Os valores por profissional não representam comissão.</p></div>
+              <div class="fin27-toolbar no-print"><label>Dia de referência <input type="date" id="fin27Date"></label>
+                <label>Visão do mapa <select id="fin27View"><option value="todos">Todos os atendimentos</option><option value="sim">Utilizações de pacote pré-pago</option><option value="nao">Sem pacote</option><option value="unknown">Pacote não informado (legado)</option></select></label>
+                <button type="button" class="btn btn-outline" id="fin27Reload">Atualizar</button>
+                <button type="button" class="btn btn-outline" id="fin27Print">Imprimir mapa</button>
+                <button type="button" class="btn btn-outline" id="fin27Csv">Exportar CSV</button>
+              </div>
+            </header>
+            <div class="fin27-banner" id="fin27Message" role="status" aria-live="polite"></div>
+            <div class="fin27-kpis" id="fin27Kpis" aria-live="polite"></div>
+            <div class="fin27-statusbar"><div id="fin27Status"></div>
+              <div class="fin27-toolbar no-print"><button type="button" id="fin27Start" class="btn btn-outline">Iniciar conferência</button>
+              <button type="button" id="fin27Close" class="btn btn-primary">Fechar o dia</button></div>
+            </div>
+            <div class="fin27-table-wrap table-scroll"><table class="fin27-table">
+              <thead><tr><th>Pet / tutor</th><th>Serviço</th><th>Profissionais</th><th>Pacote</th>
+                <th>Referência</th><th>Coberto por pacote</th><th>Cobrança prevista</th><th>Recebido</th><th>Conferência</th></tr></thead>
+              <tbody id="fin27Rows"><tr><td colspan="9">Selecione a data para carregar o mapa diário.</td></tr></tbody>
+            </table></div>
+            <p class="fin27-help">Os valores são associados uma única vez por atendimento, mesmo quando vários profissionais executam atividades. Pacote pré-pago não gera novo recebimento. Os meios de pagamento não são inferidos das antigas siglas manuscritas.</p>
+          </section>
+          <section class="panel fin27-detail" id="fin27Detail" hidden aria-label="Conferência de atendimento financeiro"></section>
+          <section class="panel fin27-audit-panel"><div class="panel-heading"><h3>Histórico de correções e fechamento</h3><p>Alterações preservadas com motivo, autor, data e valores anteriores e posteriores.</p></div>
+            <div class="table-scroll"><table class="fin27-audit-table"><thead><tr><th>Data/hora</th><th>Evento</th><th>Justificativa</th><th>Referência</th></tr></thead><tbody id="fin27Audit"></tbody></table></div>
           </section>
         </div>
         <div id="admin-conferencia" class="admin-panel" hidden>
@@ -402,22 +435,24 @@
         <div class="page-heading no-print"><div><span class="eyebrow">PAINEL OPERACIONAL</span><h1>Visão do telão</h1><p>Exibição contínua das filas de atendimento.</p></div><button id="fullscreenBtn" type="button" class="btn btn-outline">Tela cheia</button></div>
         <div class="tv-header"><div class="brand"><img class="brand-logo" src="./assets/logo.webp" alt="Logo Bolhas & Latidos" onerror="this.hidden=true"><span class="brand-fallback">Bolhas <em>&</em> Latidos</span></div><div class="tv-now" id="tvClock"></div></div>
         <div class="tv-grid" id="tvGrid" data-density="single"><div class="tv-column farol-warning"><h2>Aguardando <span id="tvWaitingCount">0</span></h2><div id="tvWaiting" class="tv-list"></div></div><div class="tv-column farol-success"><h2>Em execução <span id="tvActiveCount">0</span></h2><div id="tvActive" class="tv-list"></div></div></div>
-        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 2.6.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
+        <footer class="tv-legal-footer legal-footer"><span class="version-label">Versão 2.7.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></footer>
       </section>
     </main>
-    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 2.6.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
+    <footer class="footer"><div class="footer-status"><strong>Bolhas & Latidos · Gestão operacional</strong><span id="lastUpdated">Aguardando sincronização</span></div><div class="legal-footer app-legal-footer"><span class="version-label">Versão 2.7.0</span><span class="legal-credit">Desenvolvido por SUMMIT ADVISORY TECNOLOGIA E INFORMÁTICA LTDA</span></div></footer>
   </div>
   <section id="bookingPrintSheet" hidden aria-label="Ficha de programação para impressão"></section>
   <section id="dailyPrintSheet" hidden aria-label="Relatório diário tabular para impressão"></section>
   <section id="auditPrintSheet" hidden aria-label="Conferência de fichas tabular para impressão"></section>
+  <section id="financePrintSheet" hidden aria-label="Mapa de fechamento diário financeiro para impressão"></section>
   <script src="./config.js?v=20261125-2"></script>
-  <script type="module" src="./app.js?v=260"></script>
-  <script type="module" src="./etapas-v23.js?v=260"></script>
-  <script type="module" src="./producao-admin.js?v=260"></script>
-  <script type="module" src="./comercial-admin.js?v=260"></script>
-  <script type="module" src="./tabelas-v24.js?v=260"></script>
-  <script type="module" src="./agendamento-admin.js?v=260"></script>
-  <script type="module" src="./programacao-entrada.js?v=260"></script>
-  <script type="module" src="./impressao-v25.js?v=260"></script>
+  <script type="module" src="./app.js?v=270"></script>
+  <script type="module" src="./etapas-v23.js?v=270"></script>
+  <script type="module" src="./producao-admin.js?v=270"></script>
+  <script type="module" src="./comercial-admin.js?v=270"></script>
+  <script type="module" src="./tabelas-v24.js?v=270"></script>
+  <script type="module" src="./agendamento-admin.js?v=270"></script>
+  <script type="module" src="./programacao-entrada.js?v=270"></script>
+  <script type="module" src="./impressao-v25.js?v=270"></script>
+  <script type="module" src="./financeiro-v27.js?v=270"></script>
 </body>
 </html>
